@@ -1,14 +1,23 @@
 import Chat from './Chat.tsx'
+import { AppSidebar } from './components/app-sidebar.tsx'
+import { SidebarProvider, SidebarTrigger } from './components/ui/sidebar.tsx'
+import { cn } from './lib/utils.ts'
 
 export default function App() {
   return (
-    <div className="h-screen flex flex-col justify-center">
-      <div className="max-w-4xl mx-auto p-6 relative w-full basis-[1000px] has-[.stick-to-bottom:empty]:basis-[0px] transition-[flex-basis] duration-200">
-        <div className="flex flex-col h-full">
-          <h1 className="scroll-m-20 text-2xl lg:text-3xl">Pydantic AI Chat</h1>
+    <SidebarProvider defaultOpen>
+      <AppSidebar />
+      <SidebarTrigger />
+      <div className="flex flex-col justify-center flex-1">
+        <div
+          className={cn(
+            'flex flex-col max-w-4xl mx-auto relative w-full basis-[100vh] ',
+            'has-[.stick-to-bottom:empty]:overflow-visible has-[.stick-to-bottom:empty]:basis-[0px] transition-[flex-basis] duration-200',
+          )}
+        >
           <Chat />
         </div>
       </div>
-    </div>
+    </SidebarProvider>
   )
 }

@@ -12,7 +12,7 @@ import {
   PromptInputToolbar,
   PromptInputTools,
 } from '@/components/ai-elements/prompt-input'
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type FormEvent } from 'react'
 import { useChat } from '@ai-sdk/react'
 import { GlobeIcon } from 'lucide-react'
 import { Source, Sources, SourcesContent, SourcesTrigger } from '@/components/ai-elements/sources'
@@ -21,6 +21,7 @@ import { Loader } from '@/components/ai-elements/loader'
 import { Part } from './Part'
 import { nanoid } from 'nanoid'
 import { useThrottle } from '@uidotdev/usehooks'
+import type { ConversationEntry } from './types'
 
 const models = [
   {
@@ -33,25 +34,24 @@ const models = [
   },
 ]
 
-interface ConversationEntry {
-  id: string
-  timestamp: number
-}
-
 function useConversationIdFromUrl(): [string, (id: string) => void] {
   const [conversationId, setConversationId] = useState(() => {
-    return window.location.pathname === '/' ? '' : window.location.pathname
+    return window.location.pathname
   })
 
   useEffect(() => {
     const handlePopState = () => {
-      const newId = window.location.pathname === '/' ? '' : window.location.pathname
+      const newId = window.location.pathname
+      console.log('popstate event detected', window.location.pathname)
       setConversationId(newId)
     }
 
     window.addEventListener('popstate', handlePopState)
+    // local event to handle same-tab updates
+    window.addEventListener('history-state-changed', handlePopState)
     return () => {
       window.removeEventListener('popstate', handlePopState)
+      window.removeEventListener('history-state-changed', handlePopState)
     }
   }, [])
 
@@ -72,8 +72,9 @@ const Chat = () => {
   const { messages, sendMessage, status, setMessages, regenerate } = useChat()
   const throttledMessages = useThrottle(messages, 500)
   const [conversationId, setConversationId] = useConversationIdFromUrl()
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (conversationId === '/') {
       setMessages([])
     } else {
@@ -82,6 +83,7 @@ const Chat = () => {
         setMessages(JSON.parse(localStorageMessages) as typeof messages)
       }
     }
+    textareaRef.current?.focus()
   }, [conversationId])
 
   const handleSubmit = (e: FormEvent) => {
@@ -94,7 +96,7 @@ const Chat = () => {
         const newConversationId = `/${nanoid()}`
         setConversationId(newConversationId)
 
-        saveConversationEntryInLocalStorage(newConversationId)
+        saveConversationEntryInLocalStorage(newConversationId, input)
 
         theCurrentUrl.pathname = newConversationId
         window.history.pushState({}, '', theCurrentUrl.toString())
@@ -122,6 +124,10 @@ const Chat = () => {
     regenerate({ messageId }).catch((error: unknown) => {
       console.error('Error regenerating message:', error)
     })
+  }
+
+  if (conversationId !== '/' && messages.length === 0) {
+    return null
   }
 
   return (
@@ -161,58 +167,71 @@ const Chat = () => {
         <ConversationScrollButton />
       </Conversation>
 
-      <PromptInput onSubmit={handleSubmit} className="mt-4">
-        <PromptInputTextarea
-          onChange={(e) => {
-            setInput(e.target.value)
-          }}
-          value={input}
-          autoFocus={true}
-        />
-        <PromptInputToolbar>
-          <PromptInputTools>
-            <PromptInputButton
-              variant={webSearch ? 'default' : 'ghost'}
-              onClick={() => {
-                setWebSearch(!webSearch)
-              }}
-            >
-              <GlobeIcon size={16} />
-              <span>Search</span>
-            </PromptInputButton>
-            <PromptInputModelSelect
-              onValueChange={(value) => {
-                setModel(value)
-              }}
-              value={model}
-            >
-              <PromptInputModelSelectTrigger>
-                <PromptInputModelSelectValue />
-              </PromptInputModelSelectTrigger>
-              <PromptInputModelSelectContent>
-                {models.map((model) => (
-                  <PromptInputModelSelectItem key={model.value} value={model.value}>
-                    {model.name}
-                  </PromptInputModelSelectItem>
-                ))}
-              </PromptInputModelSelectContent>
-            </PromptInputModelSelect>
-          </PromptInputTools>
-          <PromptInputSubmit disabled={!input} status={status} />
-        </PromptInputToolbar>
-      </PromptInput>
+      <div className="border-b-background border-b-[2rem] sticky bottom-0">
+        <div className="h-5 bg-gradient-to-b from-transparent to-background"></div>
+        <PromptInput onSubmit={handleSubmit}>
+          <PromptInputTextarea
+            ref={textareaRef}
+            onChange={(e) => {
+              setInput(e.target.value)
+            }}
+            value={input}
+            autoFocus={true}
+          />
+          <PromptInputToolbar>
+            <PromptInputTools>
+              <PromptInputButton
+                variant={webSearch ? 'default' : 'ghost'}
+                onClick={() => {
+                  setWebSearch(!webSearch)
+                }}
+              >
+                <GlobeIcon size={16} />
+                <span>Search</span>
+              </PromptInputButton>
+              <PromptInputModelSelect
+                onValueChange={(value) => {
+                  setModel(value)
+                }}
+                value={model}
+              >
+                <PromptInputModelSelectTrigger>
+                  <PromptInputModelSelectValue />
+                </PromptInputModelSelectTrigger>
+                <PromptInputModelSelectContent>
+                  {models.map((model) => (
+                    <PromptInputModelSelectItem key={model.value} value={model.value}>
+                      {model.name}
+                    </PromptInputModelSelectItem>
+                  ))}
+                </PromptInputModelSelectContent>
+              </PromptInputModelSelect>
+            </PromptInputTools>
+            <PromptInputSubmit disabled={!input} status={status} />
+          </PromptInputToolbar>
+        </PromptInput>
+      </div>
     </>
   )
 }
 
 export default Chat
 
-function saveConversationEntryInLocalStorage(newConversationId: string) {
+const MAX_FIRST_MESSAGE_LENGTH = 30
+
+function saveConversationEntryInLocalStorage(newConversationId: string, firstMessage: string) {
   const currentConversations = window.localStorage.getItem('conversationIds') ?? '[]'
   const conversationIds = JSON.parse(currentConversations) as ConversationEntry[]
-  conversationIds.push({
+  const trimmedFirstMessage =
+    firstMessage.length > MAX_FIRST_MESSAGE_LENGTH
+      ? firstMessage.slice(0, MAX_FIRST_MESSAGE_LENGTH) + '...'
+      : firstMessage
+  conversationIds.unshift({
     id: newConversationId,
+    firstMessage: trimmedFirstMessage,
     timestamp: Date.now(),
   })
   window.localStorage.setItem('conversationIds', JSON.stringify(conversationIds))
+  // dispatch a custom event so that the sidebar can update
+  window.dispatchEvent(new Event('local-storage-change'))
 }

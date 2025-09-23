@@ -12,13 +12,15 @@ import {
   PromptInputToolbar,
   PromptInputTools,
 } from '@/components/ai-elements/prompt-input'
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { useChat } from '@ai-sdk/react'
 import { GlobeIcon } from 'lucide-react'
 import { Source, Sources, SourcesContent, SourcesTrigger } from '@/components/ai-elements/sources'
 import { Loader } from '@/components/ai-elements/loader'
 
 import { Part } from './Part'
+import { nanoid } from 'nanoid'
+import { useThrottle } from '@uidotdev/usehooks'
 
 const models = [
   {
@@ -31,15 +33,73 @@ const models = [
   },
 ]
 
-const ChatBotDemo = () => {
+interface ConversationEntry {
+  id: string
+  timestamp: number
+}
+
+function useConversationIdFromUrl(): [string, (id: string) => void] {
+  const [conversationId, setConversationId] = useState(() => {
+    return window.location.pathname === '/' ? '' : window.location.pathname
+  })
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const newId = window.location.pathname === '/' ? '' : window.location.pathname
+      setConversationId(newId)
+    }
+
+    window.addEventListener('popstate', handlePopState)
+    return () => {
+      window.removeEventListener('popstate', handlePopState)
+    }
+  }, [])
+
+  const setConversationIdAndUrl = (id: string) => {
+    setConversationId(id)
+    const url = new URL(window.location.toString())
+    url.pathname = id || '/'
+    window.history.pushState({}, '', url.toString())
+  }
+
+  return [conversationId, setConversationIdAndUrl]
+}
+
+const Chat = () => {
   const [input, setInput] = useState('')
   const [model, setModel] = useState<string>(models[0].value)
   const [webSearch, setWebSearch] = useState(false)
-  const { messages, sendMessage, status, regenerate } = useChat()
+  const { messages, sendMessage, status, setMessages, regenerate } = useChat()
+  const throttledMessages = useThrottle(messages, 500)
+  const [conversationId, setConversationId] = useConversationIdFromUrl()
+
+  useEffect(() => {
+    if (conversationId === '/') {
+      setMessages([])
+    } else {
+      const localStorageMessages = window.localStorage.getItem(conversationId)
+      if (localStorageMessages) {
+        setMessages(JSON.parse(localStorageMessages) as typeof messages)
+      }
+    }
+  }, [conversationId])
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault()
     if (input.trim()) {
+      const theCurrentUrl = new URL(window.location.toString())
+
+      // we're starting a new conversation
+      if (theCurrentUrl.pathname === '/') {
+        const newConversationId = `/${nanoid()}`
+        setConversationId(newConversationId)
+
+        saveConversationEntryInLocalStorage(newConversationId)
+
+        theCurrentUrl.pathname = newConversationId
+        window.history.pushState({}, '', theCurrentUrl.toString())
+      }
+
       sendMessage(
         { text: input },
         {
@@ -51,6 +111,12 @@ const ChatBotDemo = () => {
       setInput('')
     }
   }
+
+  useEffect(() => {
+    if (conversationId && throttledMessages.length > 0) {
+      window.localStorage.setItem(conversationId, JSON.stringify(throttledMessages))
+    }
+  }, [throttledMessages, conversationId])
 
   function regen(messageId: string) {
     regenerate({ messageId }).catch((error: unknown) => {
@@ -101,6 +167,7 @@ const ChatBotDemo = () => {
             setInput(e.target.value)
           }}
           value={input}
+          autoFocus={true}
         />
         <PromptInputToolbar>
           <PromptInputTools>
@@ -138,4 +205,14 @@ const ChatBotDemo = () => {
   )
 }
 
-export default ChatBotDemo
+export default Chat
+
+function saveConversationEntryInLocalStorage(newConversationId: string) {
+  const currentConversations = window.localStorage.getItem('conversationIds') ?? '[]'
+  const conversationIds = JSON.parse(currentConversations) as ConversationEntry[]
+  conversationIds.push({
+    id: newConversationId,
+    timestamp: Date.now(),
+  })
+  window.localStorage.setItem('conversationIds', JSON.stringify(conversationIds))
+}

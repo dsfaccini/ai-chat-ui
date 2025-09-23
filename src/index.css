@@ -123,6 +123,13 @@
 .code-bg .bg-muted {
   background: #b0b8c442;
 }
+
 .rounded {
   border-radius: 4px;
+}
+
+html,
+body,
+#root {
+  height: 100%;
 }

@@ -1,7 +1,10 @@
 {
-  "name": "pydantic-ai-chat",
-  "private": true,
-  "version": "0.0.0",
+  "name": "@pydantic/pydantic-ai-chat",
+  "private": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "version": "0.0.2",
   "type": "module",
   "scripts": {
     "typecheck": "tsc --noEmit",
@@ -12,6 +15,9 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview"
   },
+  "files": [
+    "dist"
+  ],
   "dependencies": {
     "@ai-sdk/react": "^2.0.34",
     "@radix-ui/react-avatar": "^1.1.10",

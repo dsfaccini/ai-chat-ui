@@ -3,6 +3,7 @@ from __future__ import annotations as _annotations
 from pathlib import Path
 
 import fastapi
+import httpx
 import logfire
 from fastapi import Request, Response
 from fastapi.responses import HTMLResponse
@@ -59,15 +60,11 @@ async def get_chat(request: Request) -> Response:
     return await starlette_chat.dispatch_request(request, deps=None)
 
 
-react_build = Path(__file__).parent / '..' / '..' / 'dist'
-if react_build.exists():
-    print('servering react assets')
-
-    @app.get('/')
-    @app.get('/{id}')
-    async def index() -> HTMLResponse:
-        return HTMLResponse(
-            content=(react_build / 'index.html').read_bytes(), status_code=200
+@app.get('/')
+@app.get('/{id}')
+async def index(request: Request):
+    async with httpx.AsyncClient() as client:
+        response = await client.get(
+            'https://cdn.jsdelivr.net/npm/@pydantic/pydantic-ai-chat@0.0.2/dist/index.html'
         )
-
-    app.mount('/assets', StaticFiles(directory=react_build / 'assets'), name='static')
+        return HTMLResponse(content=response.content, status_code=response.status_code)

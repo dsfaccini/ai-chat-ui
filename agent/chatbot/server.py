@@ -3,6 +3,7 @@ from __future__ import annotations as _annotations
 from typing import Literal
 
 import fastapi
+from pydantic.alias_generators import to_camel
 import httpx
 import logfire
 from fastapi import Request, Response
@@ -91,7 +92,7 @@ AI_MODELS: list[AIModel] = [
 ]
 
 
-class ConfigureFrontend(BaseModel):
+class ConfigureFrontend(BaseModel, alias_generator=to_camel, populate_by_name=True):
     models: list[AIModel]
     builtin_tools: list[BuiltinTool]
 

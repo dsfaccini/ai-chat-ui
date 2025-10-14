@@ -24,3 +24,6 @@ dist-ssr
 *.sw?
 /.claude/settings.local.json
 /scratch/
+/agent/.venv/
+/tsconfig.tsbuildinfo
+.env

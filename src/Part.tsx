@@ -1,7 +1,6 @@
 import { Message, MessageContent } from '@/components/ai-elements/message'
 
 import { Actions, Action } from '@/components/ai-elements/actions'
-import { Fragment } from 'react'
 import { Response } from '@/components/ai-elements/response'
 import { CopyIcon, RefreshCcwIcon } from 'lucide-react'
 import type { UIDataTypes, UIMessagePart, UITools, UIMessage } from 'ai'
@@ -27,14 +26,14 @@ export function Part({ part, message, status, regen, index, lastMessage }: PartP
 
   if (part.type === 'text') {
     return (
-      <Fragment>
+      <div className="py-4">
         <Message from={message.role}>
           <MessageContent>
             <Response>{part.text}</Response>
           </MessageContent>
         </Message>
         {message.role === 'assistant' && index === message.parts.length - 1 && (
-          <Actions className="mt-2">
+          <Actions className="mt-1">
             <Action
               onClick={() => {
                 regen(message.id)
@@ -53,7 +52,7 @@ export function Part({ part, message, status, regen, index, lastMessage }: PartP
             </Action>
           </Actions>
         )}
-      </Fragment>
+      </div>
     )
   } else if (part.type === 'reasoning') {
     return (

@@ -2,9 +2,10 @@ import { Badge } from '@/components/ui/badge'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { cn } from '@/lib/utils'
 import type { ToolUIPart } from 'ai'
-import { CheckCircleIcon, ChevronDownIcon, CircleIcon, ClockIcon, WrenchIcon, XCircleIcon } from 'lucide-react'
+import { CheckCircleIcon, ChevronDownIcon, CircleIcon, ClockIcon, XCircleIcon } from 'lucide-react'
 import type { ComponentProps, ReactNode } from 'react'
 import { CodeBlock } from './code-block'
+import { getToolIcon } from '@/lib/tool-icons'
 
 export type ToolProps = ComponentProps<typeof Collapsible>
 
@@ -41,17 +42,21 @@ const getStatusBadge = (status: ToolUIPart['state']) => {
   )
 }
 
-export const ToolHeader = ({ className, type, state, ...props }: ToolHeaderProps) => (
-  <CollapsibleTrigger className={cn('flex w-full items-center justify-between gap-4 p-3', className)} {...props}>
-    <div className="flex items-center gap-2">
-      <WrenchIcon className="size-4 text-muted-foreground" />
-      {/*fix but in default implementation that causes `tool-` prefix to show*/}
-      <span className="font-medium text-sm">{type.slice(5)}</span>
-      {getStatusBadge(state)}
-    </div>
-    <ChevronDownIcon className="size-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
-  </CollapsibleTrigger>
-)
+export const ToolHeader = ({ className, type, state, ...props }: ToolHeaderProps) => {
+  const toolId = type.slice(5) // Remove 'tool-' prefix
+  const toolIcon = getToolIcon(toolId, 'size-4 text-muted-foreground')
+
+  return (
+    <CollapsibleTrigger className={cn('flex w-full items-center justify-between gap-4 p-3', className)} {...props}>
+      <div className="flex items-center gap-2">
+        {toolIcon}
+        <span className="font-medium text-sm">{toolId}</span>
+        {getStatusBadge(state)}
+      </div>
+      <ChevronDownIcon className="size-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
+    </CollapsibleTrigger>
+  )
+}
 
 export type ToolContentProps = ComponentProps<typeof CollapsibleContent>
 

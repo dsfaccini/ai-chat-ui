@@ -105,7 +105,7 @@ async def configure_frontend() -> ConfigureFrontend:
     )
 
 
-class ChatRequestExtra(BaseModel, extra='ignore'):
+class ChatRequestExtra(BaseModel, extra='ignore', alias_generator=to_camel):
     model: AIModelID | None = None
     builtin_tools: list[BuiltinToolID] = []
 

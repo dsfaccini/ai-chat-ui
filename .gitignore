@@ -26,3 +26,4 @@ dist-ssr
 /scratch/
 /agent/.venv/
 /tsconfig.tsbuildinfo
+.env

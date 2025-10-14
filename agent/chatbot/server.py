@@ -1,15 +1,20 @@
 from __future__ import annotations as _annotations
 
-from pathlib import Path
+from typing import Literal
 
 import fastapi
 import httpx
 import logfire
 from fastapi import Request, Response
 from fastapi.responses import HTMLResponse
-from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
-from pydantic_ai.vercel_ai_elements.starlette import StarletteChat
+from pydantic_ai.builtin_tools import (
+    AbstractBuiltinTool,
+    WebSearchTool,
+    ImageGenerationTool,
+    CodeExecutionTool,
+)
+from pydantic_ai.ui.vercel_ai import VercelAIAdapter
 
 from .agent import agent
 
@@ -17,7 +22,6 @@ from .agent import agent
 logfire.configure(send_to_logfire='if-token-present')
 logfire.instrument_pydantic_ai()
 
-starlette_chat = StarletteChat(agent)
 app = fastapi.FastAPI()
 logfire.instrument_fastapi(app)
 
@@ -27,37 +31,94 @@ def options_chat():
     pass
 
 
+AIModelID = Literal[
+    'anthropic:claude-sonnet-4-5',
+    'openai-responses:gpt-5',
+    'google-gla:gemini-2.5-pro',
+]
+BuiltinToolID = Literal['web_search', 'image_generation', 'code_execution']
+
+
 class AIModel(BaseModel):
-    id: str
+    id: AIModelID
+    name: str
+    builtin_tools: list[BuiltinToolID]
+
+
+class BuiltinTool(BaseModel):
+    id: BuiltinToolID
     name: str
 
 
-class Button(BaseModel):
-    label: str
-    action: str
+BUILTIN_TOOL_DEFS: list[BuiltinTool] = [
+    BuiltinTool(id='web_search', name='Web Search'),
+    BuiltinTool(id='code_execution', name='Code Execution'),
+    BuiltinTool(id='image_generation', name='Image Generation'),
+]
+
+BUILTIN_TOOLS: dict[BuiltinToolID, AbstractBuiltinTool] = {
+    'web_search': WebSearchTool(),
+    'code_execution': CodeExecutionTool(),
+    'image_generation': ImageGenerationTool(),
+}
+
+AI_MODELS: list[AIModel] = [
+    AIModel(
+        id='anthropic:claude-sonnet-4-5',
+        name='Claude Sonnet 4.5',
+        builtin_tools=[
+            'web_search',
+            'code_execution',
+        ],
+    ),
+    AIModel(
+        id='openai-responses:gpt-5',
+        name='GPT 5',
+        builtin_tools=[
+            'web_search',
+            'code_execution',
+            'image_generation',
+        ],
+    ),
+    AIModel(
+        id='google-gla:gemini-2.5-pro',
+        name='Gemini 2.5 Pro',
+        builtin_tools=[
+            'web_search',
+            'code_execution',
+        ],
+    ),
+]
 
 
 class ConfigureFrontend(BaseModel):
     models: list[AIModel]
-    buttons: list[Button]
+    builtin_tools: list[BuiltinTool]
 
 
 @app.get('/api/configure')
 async def configure_frontend() -> ConfigureFrontend:
     return ConfigureFrontend(
-        models=[
-            AIModel(id='openai:gpt-4.1', name='GPT 4.1'),
-            AIModel(id='openai:gpt-5', name='GPT 5'),
-        ],
-        buttons=[
-            Button(label='Search', action='search'),
-        ],
+        models=AI_MODELS,
+        builtin_tools=BUILTIN_TOOL_DEFS,
     )
 
 
+class ChatRequestExtra(BaseModel, extra='ignore'):
+    model: AIModelID | None = None
+    builtin_tools: list[BuiltinToolID] = []
+
+
 @app.post('/api/chat')
-async def get_chat(request: Request) -> Response:
-    return await starlette_chat.dispatch_request(request, deps=None)
+async def post_chat(request: Request) -> Response:
+    request_data = await VercelAIAdapter.validate_request(request)
+    extra_data = ChatRequestExtra.model_validate(request_data.__pydantic_extra__)
+    return await VercelAIAdapter.dispatch_request(
+        agent,
+        request,
+        model=extra_data.model,
+        builtin_tools=[BUILTIN_TOOLS[tool_id] for tool_id in extra_data.builtin_tools],
+    )
 
 
 @app.get('/')

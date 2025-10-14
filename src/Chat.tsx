@@ -14,9 +14,12 @@ import {
   PromptInputTools,
 } from '@/components/ai-elements/prompt-input'
 import { Source, Sources, SourcesContent, SourcesTrigger } from '@/components/ai-elements/sources'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { Switch } from '@/components/ui/switch'
 import { useChat } from '@ai-sdk/react'
-import { Square, CheckSquare } from 'lucide-react'
-import { useEffect, useLayoutEffect, useRef, useState, type FormEvent } from 'react'
+import { Settings2Icon } from 'lucide-react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 
 import { useQuery } from '@tanstack/react-query'
 import { useThrottle } from '@uidotdev/usehooks'
@@ -24,14 +27,19 @@ import { nanoid } from 'nanoid'
 import { useConversationIdFromUrl } from './hooks/useConversationIdFromUrl'
 import { Part } from './Part'
 import type { ConversationEntry } from './types'
+import { getToolIcon } from '@/lib/tool-icons'
 
 interface ModelConfig {
   id: string
   name: string
-  builtInTools: {
-    name: string
-    id: string
-  }[]
+  builtin_tools: string[]
+}
+
+// XXX: hard-code icons
+
+interface BuiltinTool {
+  name: string
+  id: string
 }
 
 // TODO: if just a single model, don't show model selector, just a label.
@@ -39,6 +47,7 @@ interface RemoteConfig {
   // hard-code matching icons for popular tools, use default wrench for the unrecognized.
   // known ones: web_search, code_execution, image_generation, web_fetch
   models: ModelConfig[]
+  builtinTools: BuiltinTool[]
 }
 
 async function getModels() {
@@ -49,7 +58,7 @@ async function getModels() {
 const Chat = () => {
   const [input, setInput] = useState('')
   const [model, setModel] = useState<string>('')
-  const [enabledActions, setEnabledActions] = useState<string[]>([])
+  const [enabledTools, setEnabledTools] = useState<string[]>([])
   const { messages, sendMessage, status, setMessages, regenerate } = useChat()
   const throttledMessages = useThrottle(messages, 500)
   const [conversationId, setConversationId] = useConversationIdFromUrl()
@@ -97,8 +106,7 @@ const Chat = () => {
       sendMessage(
         { text: input },
         {
-          // body: { model, builtInTools: string[] // the ids of what's enabled. },
-          body: { model, webSearch: true },
+          body: { model, builtinTools: enabledTools, webSearch: true },
         },
       ).catch((error: unknown) => {
         console.error('Error sending message:', error)
@@ -118,6 +126,11 @@ const Chat = () => {
       console.error('Error regenerating message:', error)
     })
   }
+
+  const availableTools = useMemo(() => {
+    const enabledToolIds = configQuery.data?.models.find((entry) => entry.id === model)?.builtin_tools ?? []
+    return configQuery.data?.builtinTools.filter((tool) => enabledToolIds.includes(tool.id)) ?? []
+  }, [configQuery.data, model])
 
   if (conversationId !== '/' && messages.length === 0) {
     return null
@@ -172,26 +185,49 @@ const Chat = () => {
           />
           <PromptInputToolbar>
             <PromptInputTools>
-              {configQuery.data?.buttons.map((button) => {
-                const isEnabled = enabledActions.includes(button.action)
-                return (
-                  // ['search']
-                  <PromptInputButton
-                    key={button.action}
-                    variant={isEnabled ? 'default' : 'ghost'}
-                    onClick={() => {
-                      setEnabledActions((prev) =>
-                        prev.includes(button.action)
-                          ? prev.filter((action) => action !== button.action)
-                          : [...prev, button.action],
-                      )
-                    }}
-                  >
-                    {isEnabled ? <CheckSquare size={16} /> : <Square size={16} />}
-                    <span>{button.label}</span>
-                  </PromptInputButton>
-                )
-              })}
+              {availableTools.length > 0 && (
+                <DropdownMenu>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <DropdownMenuTrigger asChild>
+                        <PromptInputButton variant="outline">
+                          <Settings2Icon className="size-4" />
+                        </PromptInputButton>
+                      </DropdownMenuTrigger>
+                    </TooltipTrigger>
+                    <TooltipContent>Tools</TooltipContent>
+                  </Tooltip>
+                  <DropdownMenuContent align="start">
+                    {availableTools.map((tool) => (
+                      <div
+                        key={tool.id}
+                        className="flex items-center justify-between gap-3 px-2 py-1.5 cursor-pointer hover:bg-accent rounded-sm"
+                        onClick={() => {
+                          setEnabledTools((prev) =>
+                            prev.includes(tool.id) ? prev.filter((id) => id !== tool.id) : [...prev, tool.id],
+                          )
+                        }}
+                      >
+                        <div className="flex items-center gap-2">
+                          {getToolIcon(tool.id)}
+                          <span className="text-sm">{tool.name}</span>
+                        </div>
+                        <Switch
+                          checked={enabledTools.includes(tool.id)}
+                          onCheckedChange={(checked) => {
+                            setEnabledTools((prev) =>
+                              checked ? [...prev, tool.id] : prev.filter((id) => id !== tool.id),
+                            )
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                          }}
+                        />
+                      </div>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
               {configQuery.data && model && (
                 <PromptInputModelSelect
                   onValueChange={(value) => {

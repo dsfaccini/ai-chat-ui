@@ -3,17 +3,17 @@ from __future__ import annotations as _annotations
 from typing import Literal
 
 import fastapi
-from pydantic.alias_generators import to_camel
 import httpx
 import logfire
 from fastapi import Request, Response
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
+from pydantic.alias_generators import to_camel
 from pydantic_ai.builtin_tools import (
     AbstractBuiltinTool,
-    WebSearchTool,
-    ImageGenerationTool,
     CodeExecutionTool,
+    ImageGenerationTool,
+    WebSearchTool,
 )
 from pydantic_ai.ui.vercel_ai import VercelAIAdapter
 
@@ -127,6 +127,6 @@ async def post_chat(request: Request) -> Response:
 async def index(request: Request):
     async with httpx.AsyncClient() as client:
         response = await client.get(
-            'https://cdn.jsdelivr.net/npm/@pydantic/pydantic-ai-chat@0.0.2/dist/index.html'
+            'https://cdn.jsdelivr.net/npm/@pydantic/ai-chat-ui@0.0.2/dist/index.html'
         )
         return HTMLResponse(content=response.content, status_code=response.status_code)

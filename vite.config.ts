@@ -7,7 +7,7 @@ import tsconfigPaths from 'vite-tsconfig-paths'
 // https://vite.dev/config/
 export default defineConfig(({ command }) => ({
   plugins: [react(), tailwindcss(), tsconfigPaths()],
-  base: command === 'build' ? 'https://cdn.jsdelivr.net/npm/@pydantic/pydantic-ai-chat/dist/' : '',
+  base: command === 'build' ? 'https://cdn.jsdelivr.net/npm/@pydantic/ai-chat-ui/dist/' : '',
   build: {
     assetsDir: 'assets',
   },

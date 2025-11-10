@@ -15,6 +15,8 @@ cd agent && uv run uvicorn chatbot.server:app
 
 ## Chat locally with your Pydantic AI agents
 
+[PyPI](https://pypi.org/project/pydantic-work/)
+
 checkout the [agent/README.md](./agent/README.md)
 
 ```bash

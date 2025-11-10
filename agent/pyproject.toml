@@ -7,7 +7,7 @@ requires-python = ">=3.12"
 authors = [
     { name = "David Sanchez", email = "64162682+dsfaccini@users.noreply.github.com" }
 ]
-license = { text = "MIT" }
+license = "MIT"
 dependencies = [
     "bs4>=0.0.2",
     "fastapi>=0.117.1",

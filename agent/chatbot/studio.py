@@ -397,7 +397,7 @@ Examples:
     check_api_keys()
 
     # Load the agent
-    print(f'📦 Loading agent from {args.agent}...')
+    print(f'📦 Loading agent from {args.agent}... (this may take a few seconds)')
     try:
         agent_instance = load_agent_from_string(args.agent)
         print('✅ Agent loaded successfully')

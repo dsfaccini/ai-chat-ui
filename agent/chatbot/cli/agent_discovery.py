@@ -203,4 +203,3 @@ def find_agents(root_dir: Path | None = None) -> list[AgentInfo]:
         agents.extend(file_agents)
 
     return agents
-

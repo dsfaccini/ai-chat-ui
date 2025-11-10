@@ -3,9 +3,9 @@
 A local-first chat UI for your [Pydantic AI](https://ai.pydantic.dev/) agents.
 
 ```bash
-uvx pydantic-chat <module>:<agent variable>
+uvx pydantic-work <module>:<agent variable>
 
-# e.g. uvx pydantic-chat src.my_agent:agent
+# e.g. uvx pydantic-work src.my_agent:agent
 ```
 
 ## What is it?
@@ -16,7 +16,7 @@ Pydantic Chat provides a beautiful web interface for interacting with your Pydan
 
 ```bash
 # Install with uv (recommended)
-uv tool install pydantic-chat
+uv tool install pydantic-work
 
 # Or install in development mode
 cd agent
@@ -54,23 +54,23 @@ ANTHROPIC_API_KEY="your-key-here"
 Then source it before running:
 
 ```bash
-source .env && pydantic-chat your_module:agent
+source .env && pydantic-work your_module:agent
 ```
 
 ## Usage
 
 ```bash
 # Basic usage
-pydantic-chat module.path:agent_variable
+pydantic-work module.path:agent_variable
 
 # Example
-pydantic-chat chatbot.agent:agent
+pydantic-work chatbot.agent:agent
 
 # Localhost-only mode (skip remote registration)
-pydantic-chat --localhost chatbot.agent:agent
+pydantic-work --localhost chatbot.agent:agent
 
 # Custom port
-pydantic-chat --port 8000 chatbot.agent:agent
+pydantic-work --port 8000 chatbot.agent:agent
 ```
 
 ## How It Works
@@ -105,12 +105,12 @@ Run it:
 
 ```bash
 export ANTHROPIC_API_KEY="your-key-here"
-pydantic-chat src.my_agent:agent
+pydantic-work src.my_agent:agent
 ```
 
 ## Configuration
 
-On first run, Pydantic Chat creates `.pydantic-chat/config.json` in your project directory with your slug, token, and port. This folder is automatically added to `.gitignore`.
+On first run, Pydantic Chat creates `.pydantic-work/config.json` in your project directory with your slug, token, and port. This folder is automatically added to `.gitignore`.
 
 ## Patterns
 
@@ -119,8 +119,8 @@ On first run, Pydantic Chat creates `.pydantic-chat/config.json` in your project
 Each project directory gets its own config, so you can run multiple agents with different slugs:
 
 ```bash
-cd project-a && pydantic-chat agent:agent  # -> project-a.pydantic.work
-cd project-b && pydantic-chat agent:agent  # -> project-b.pydantic.work
+cd project-a && pydantic-work agent:agent  # -> project-a.pydantic.work
+cd project-b && pydantic-work agent:agent  # -> project-b.pydantic.work
 ```
 
 ### Environment Files

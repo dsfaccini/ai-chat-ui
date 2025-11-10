@@ -21,7 +21,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic_ai import Agent
 
 BASE_DOMAIN = 'pydantic.work'
-CONFIG_DIR_NAME = '.pydantic-chat'
+CONFIG_DIR_NAME = '.pydantic-work'
 CONFIG_FILE_NAME = 'config.json'
 
 
@@ -48,7 +48,7 @@ def check_api_keys() -> None:
             print(f'    export {key}="your-key-here"')
             print()
         print('💡 Tip: Add your API key to a .env file and run:')
-        print('   source .env && pydantic-chat chatbot.agent:agent')
+        print('   source .env && pydantic-work chatbot.agent:agent')
         sys.exit(1)
 
     # Show which keys are available
@@ -306,9 +306,9 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  pydantic-chat chatbot.agent:agent
-  pydantic-chat my_agent:my_agent_instance
-  pydantic-chat --localhost chatbot.agent:agent
+  pydantic-work chatbot.agent:agent
+  pydantic-work my_agent:my_agent_instance
+  pydantic-work --localhost chatbot.agent:agent
         """,
     )
     parser.add_argument(

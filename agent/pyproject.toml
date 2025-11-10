@@ -39,7 +39,7 @@ cli = [
 ]
 
 [project.scripts]
-pydantic-chat = "chatbot.studio:main"
+pydantic-work = "chatbot.studio:main"
 
 [tool.uv]
 package = true

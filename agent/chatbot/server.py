@@ -142,7 +142,8 @@ async def index(request: Request):
         return HTMLResponse(content=response.content, status_code=response.status_code)
 
 
-dist_path = Path(__file__).parent.parent.parent / 'dist'
+root_path = Path(__file__).parent.parent.parent
+dist_path = root_path / 'dist'
 assets_path = dist_path / 'assets'
 app.mount('/assets', StaticFiles(directory=assets_path), name='assets')
 
@@ -154,4 +155,4 @@ async def preview_build():
 
 @app.get('/favicon.ico')
 async def favicon():
-    return FileResponse((dist_path.parent / 'favicon.ico').as_posix())
+    return FileResponse((root_path / 'public/favicon.ico').as_posix())

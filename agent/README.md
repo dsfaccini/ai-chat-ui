@@ -83,6 +83,8 @@ pydantic-work --port 8000 chatbot.agent:agent
 
 Your agent code and data never leave your machine. The remote URL just provides the frontend.
 
+> **Note:** The localhost UI is served via CDN (jsdelivr) at a pinned version, while the remote UI is served from the Cloudflare Worker and may be on a different version. Both UIs are compatible with the same backend API.
+
 ## Example Agent
 
 ```python

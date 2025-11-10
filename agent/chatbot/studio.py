@@ -4,6 +4,7 @@ from __future__ import annotations as _annotations
 
 import argparse
 import importlib
+import importlib.metadata
 import json
 import os
 import re
@@ -20,9 +21,19 @@ import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic_ai import Agent
 
+from .cli.agent_discovery import find_agents
+
 BASE_DOMAIN = 'pydantic.work'
 CONFIG_DIR_NAME = '.pydantic-work'
 CONFIG_FILE_NAME = 'config.json'
+
+
+def get_version() -> str:
+    """Get the package version."""
+    try:
+        return importlib.metadata.version('pydantic-work')
+    except importlib.metadata.PackageNotFoundError:
+        return 'dev'
 
 
 def check_api_keys() -> None:
@@ -40,7 +51,9 @@ def check_api_keys() -> None:
 
     if not available_keys:
         print('\n❌ No API keys found!')
-        print('\nPydantic Chat requires at least one LLM API key to be set.')
+        print(
+            '\n\033[38;2;230;32;233mPydantic Work\033[0m requires at least one LLM API key to be set.'
+        )
         print('Supported providers:')
         print()
         for key, provider in supported_keys.items():
@@ -302,7 +315,7 @@ CHECKBOX_STYLE = questionary.Style(
 def main():
     """Main CLI entry point."""
     parser = argparse.ArgumentParser(
-        description='Run Pydantic Chat with a local agent',
+        description='Run \033[38;2;230;32;233mPydantic Work\033[0m with a local agent',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -326,7 +339,59 @@ Examples:
         help='Port to bind to (default: auto-select free port)',
     )
 
-    args = parser.parse_args()
+    # Show help if no arguments provided
+    if len(sys.argv) == 1:
+        print(f'pydantic-work v{get_version()}\n')
+        parser.print_help()
+
+        # Prompt user to find agents
+        print()
+        should_find = questionary.confirm(
+            'Find an agent?',
+            default=True,
+            style=CHECKBOX_STYLE,
+        ).ask()
+
+        if not should_find:
+            sys.exit(0)
+
+        # Discover agents
+        print('\n🔍 Searching for agents...')
+        agents = find_agents()
+
+        if not agents:
+            print('❌ No agents found in this codebase')
+            print('\n💡 Learn how to create an agent:')
+            print('   https://ai.pydantic.dev/examples/ag-ui/#agent-prompts')
+            sys.exit(0)
+
+        # Let user select an agent
+        print(f'✅ Found {len(agents)} agent(s)\n')
+
+        # Create choices from agent info
+        choices = [agent.module_path for agent in agents]
+
+        selected = questionary.select(
+            'Select an agent:',
+            choices=choices,
+            style=CHECKBOX_STYLE,
+        ).ask()
+
+        if not selected:
+            # User cancelled
+            print('❌ Cancelled')
+            sys.exit(0)
+
+        # Create a mock args object with the selected agent
+        class Args:
+            def __init__(self):
+                self.agent = selected
+                self.localhost = False
+                self.port = None
+
+        args = Args()
+    else:
+        args = parser.parse_args()
 
     # Check for API keys before loading agent
     check_api_keys()

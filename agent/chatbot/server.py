@@ -142,17 +142,25 @@ async def index(request: Request):
         return HTMLResponse(content=response.content, status_code=response.status_code)
 
 
+# Development endpoints - these require dist/ assets which are not packaged
 root_path = Path(__file__).parent.parent.parent
 dist_path = root_path / 'dist'
 assets_path = dist_path / 'assets'
-app.mount('/assets', StaticFiles(directory=assets_path), name='assets')
 
+# Conditionally mount development endpoints only if assets exist
+if dist_path.exists() and assets_path.exists():
+    # Mount static assets for development
+    app.mount('/assets', StaticFiles(directory=assets_path), name='assets')
 
-@app.get('/dev')
-async def preview_build():
-    return FileResponse((dist_path / 'index.html').as_posix())
+    @app.get('/dev')
+    async def preview_build():
+        """Development endpoint to preview local build."""
+        return FileResponse((dist_path / 'index.html').as_posix())
 
-
-@app.get('/favicon.ico')
-async def favicon():
-    return FileResponse((root_path / 'public/favicon.ico').as_posix())
+    @app.get('/favicon.ico')
+    async def favicon():
+        """Fallback favicon for development."""
+        favicon_path = root_path / 'public/favicon.ico'
+        if favicon_path.exists():
+            return FileResponse(favicon_path.as_posix())
+        return Response(status_code=404)

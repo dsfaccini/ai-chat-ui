@@ -13,6 +13,7 @@
     "lint-fix": "eslint --fix --quiet",
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:local": "tsc -b && vite build --mode no-cdn",
     "preview": "vite preview"
   },
   "files": [

@@ -42,8 +42,8 @@ interface BuiltinTool {
 
 // TODO: if just a single model, don't show model selector, just a label.
 interface RemoteConfig {
-  models: ModelConfig[]
-  builtinTools: BuiltinTool[]
+    models: ModelConfig[]
+    builtinTools: BuiltinTool[]
 }
 
 async function getModels() {

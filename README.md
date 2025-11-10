@@ -12,3 +12,11 @@ npm run dev
 
 cd agent && uv run uvicorn chatbot.server:app
 ```
+
+## Chat locally with your Pydantic AI agents
+
+checkout the [agent/README.md](./agent/README.md)
+
+```bash
+uvx pydantic-work your_module:your_agent
+```

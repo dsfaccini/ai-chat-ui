@@ -1,7 +1,13 @@
 [project]
-name = "logfire-docs-chatbot"
+name = "pydantic-work"
 version = "0.1.0"
+description = "A local-first chat UI for Pydantic AI agents"
+readme = "README.md"
 requires-python = ">=3.12"
+authors = [
+    { name = "David Sanchez", email = "64162682+dsfaccini@users.noreply.github.com" }
+]
+license = { text = "MIT" }
 dependencies = [
     "bs4>=0.0.2",
     "fastapi>=0.117.1",
@@ -20,8 +26,26 @@ dependencies = [
     "watchfiles>=1.1.0",
 ]
 
+[project.urls]
+Homepage = "https://github.com/dsfaccini/ai-chat-ui"
+Repository = "https://github.com/dsfaccini/ai-chat-ui"
+Issues = "https://github.com/dsfaccini/ai-chat-ui/issues"
+Twitter = "https://x.com/dasfacc"
+
+[project.optional-dependencies]
+cli = [
+    "httpx>=0.27.0",
+    "questionary>=2.0.0",
+]
+
+[project.scripts]
+pydantic-chat = "chatbot.studio:main"
+
+[tool.uv]
+package = true
+
 [tool.uv.sources]
-pydantic-ai-slim = { git = "https://github.com/pydantic/pydantic-ai.git", subdirectory = "pydantic_ai_slim", rev = "vercel-ai-chat" }
+pydantic-ai-slim = { git = "https://github.com/pydantic/pydantic-ai.git", subdirectory = "pydantic_ai_slim", rev = "main" }
 
 [tool.ruff.format]
 # don't format python in docstrings, pytest-examples takes care of it

@@ -1,14 +1,17 @@
 from __future__ import annotations as _annotations
 
+from pathlib import Path
 from typing import Literal
 
 import fastapi
 import httpx
 import logfire
 from fastapi import Request, Response
-from fastapi.responses import HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from pydantic.alias_generators import to_camel
+
 from pydantic_ai.builtin_tools import (
     AbstractBuiltinTool,
     CodeExecutionTool,
@@ -20,7 +23,7 @@ from pydantic_ai.ui.vercel_ai import VercelAIAdapter
 from .agent import agent
 
 # 'if-token-present' means nothing will be sent (and the example will work) if you don't have logfire configured
-logfire.configure(send_to_logfire='if-token-present')
+logfire.configure(send_to_logfire='if-token-present', console=False)
 logfire.instrument_pydantic_ai()
 
 app = fastapi.FastAPI()
@@ -105,6 +108,11 @@ async def configure_frontend() -> ConfigureFrontend:
     )
 
 
+@app.get('/api/health')
+async def health() -> dict[str, bool]:
+    return {'ok': True}
+
+
 class ChatRequestExtra(BaseModel, extra='ignore', alias_generator=to_camel):
     model: AIModelID | None = None
     builtin_tools: list[BuiltinToolID] = []
@@ -112,14 +120,16 @@ class ChatRequestExtra(BaseModel, extra='ignore', alias_generator=to_camel):
 
 @app.post('/api/chat')
 async def post_chat(request: Request) -> Response:
-    request_data = await VercelAIAdapter.validate_request(request)
-    extra_data = ChatRequestExtra.model_validate(request_data.__pydantic_extra__)
-    return await VercelAIAdapter.dispatch_request(
-        agent,
+    # copy
+    adapter = await VercelAIAdapter.from_request(request, agent=agent)
+    extra_data = ChatRequestExtra.model_validate(adapter.run_input.__pydantic_extra__)
+    streaming_response = await VercelAIAdapter.dispatch_request(
         request,
+        agent=agent,
         model=extra_data.model,
         builtin_tools=[BUILTIN_TOOLS[tool_id] for tool_id in extra_data.builtin_tools],
     )
+    return streaming_response
 
 
 @app.get('/')
@@ -130,3 +140,18 @@ async def index(request: Request):
             'https://cdn.jsdelivr.net/npm/@pydantic/ai-chat-ui@0.0.2/dist/index.html'
         )
         return HTMLResponse(content=response.content, status_code=response.status_code)
+
+
+dist_path = Path(__file__).parent.parent.parent / 'dist'
+assets_path = dist_path / 'assets'
+app.mount('/assets', StaticFiles(directory=assets_path), name='assets')
+
+
+@app.get('/dev')
+async def preview_build():
+    return FileResponse((dist_path / 'index.html').as_posix())
+
+
+@app.get('/favicon.ico')
+async def favicon():
+    return FileResponse((dist_path.parent / 'favicon.ico').as_posix())

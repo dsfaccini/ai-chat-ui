@@ -1,6 +1,6 @@
 [project]
 name = "pydantic-work"
-version = "0.1.1"
+version = "0.1.4"
 description = "A local-first chat UI for Pydantic AI agents"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -11,6 +11,7 @@ license = "MIT"
 dependencies = [
     "bs4>=0.0.2",
     "fastapi>=0.117.1",
+    "httpx>=0.27.0",
     "lancedb>=0.25.0",
     "langchain-text-splitters>=0.3.11",
     "logfire[fastapi]>=4.9.0",
@@ -19,6 +20,7 @@ dependencies = [
     "pydantic-ai-slim[anthropic,openai,google,cli]>=1.0.10",
     "pyright>=1.1.405",
     "python-frontmatter>=1.1.0",
+    "questionary>=2.0.0",
     "sentence-transformers>=5.1.1",
     "sse-starlette>=3.0.2",
     "starlette>=0.48.0",
@@ -31,12 +33,6 @@ Homepage = "https://github.com/dsfaccini/ai-chat-ui/tree/pydantic-work"
 Repository = "https://github.com/dsfaccini/ai-chat-ui/tree/pydantic-work"
 Issues = "https://github.com/dsfaccini/ai-chat-ui/tree/pydantic-work/issues"
 Twitter = "https://x.com/dasfacc"
-
-[project.optional-dependencies]
-cli = [
-    "httpx>=0.27.0",
-    "questionary>=2.0.0",
-]
 
 [project.scripts]
 pydantic-work = "chatbot.studio:main"

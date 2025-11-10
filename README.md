@@ -17,6 +17,8 @@ cd agent && uv run uvicorn chatbot.server:app
 
 [PyPI](https://pypi.org/project/pydantic-work/)
 
+https://github.com/user-attachments/assets/ef86dabe-03aa-4010-b1ed-d2933d2eb081
+
 checkout the [agent/README.md](./agent/README.md)
 
 ```bash

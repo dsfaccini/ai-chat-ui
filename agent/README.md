@@ -27,40 +27,6 @@ cd agent
 uv pip install -e ".[cli]"
 ```
 
-## Requirements
-
-You need to have an API key from at least one supported LLM provider:
-
-```bash
-# Anthropic (Claude)
-export ANTHROPIC_API_KEY="your-key-here"
-
-# OpenAI (GPT)
-export OPENAI_API_KEY="your-key-here"
-
-# Google (Gemini)
-export GOOGLE_API_KEY="your-key-here"
-
-# Mistral
-export MISTRAL_API_KEY="your-key-here"
-
-# Groq
-export GROQ_API_KEY="your-key-here"
-```
-
-**Recommended:** Add your API key to a `.env` file:
-
-```bash
-# .env
-ANTHROPIC_API_KEY="your-key-here"
-```
-
-Then source it before running:
-
-```bash
-source .env && pydantic-work your_module:agent
-```
-
 ## Usage
 
 ```bash
@@ -110,7 +76,6 @@ def get_current_time() -> str:
 Run it:
 
 ```bash
-export ANTHROPIC_API_KEY="your-key-here"
 pydantic-work src.my_agent:agent
 ```
 
@@ -129,22 +94,7 @@ cd project-a && pydantic-work agent:agent  # -> project-a.pydantic.work
 cd project-b && pydantic-work agent:agent  # -> project-b.pydantic.work
 ```
 
-### Environment Files
-
-Keep your API keys in a `.env` file at the project root:
-
-```bash
-# .env
-ANTHROPIC_API_KEY="sk-ant-..."
-OPENAI_API_KEY="sk-..."
-
-# AVOID committing credentials to your repository
-echo -e "\n.env" >> .gitignore
-```
-
 ## Troubleshooting
-
-**No API keys found:** Export at least one supported API key before running.
 
 **Failed to load agent:** Check that your module path is correct (`module.path:variable_name`).
 

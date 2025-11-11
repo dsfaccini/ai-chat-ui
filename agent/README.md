@@ -34,13 +34,13 @@ uv pip install -e ".[cli]"
 pydantic-work module.path:agent_variable
 
 # Example
-pydantic-work chatbot.agent:agent
+pydantic-work src.golden_gate_bridge:agent
 
 # Localhost-only mode (skip remote registration)
-pydantic-work --localhost chatbot.agent:agent
+pydantic-work --localhost src.golden_gate_bridge:agent
 
 # Custom port
-pydantic-work --port 8000 chatbot.agent:agent
+pydantic-work --port 8000 src.golden_gate_bridge:agent
 ```
 
 ## How It Works

@@ -1,6 +1,6 @@
 [project]
 name = "pydantic-work"
-version = "0.1.8"
+version = "0.1.10"
 description = "A local-first chat UI for Pydantic AI agents"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -35,7 +35,10 @@ Issues = "https://github.com/dsfaccini/ai-chat-ui/tree/pydantic-work/issues"
 Twitter = "https://x.com/dasfacc"
 
 [project.scripts]
-pydantic-work = "chatbot.studio:main"
+pydantic-work = "chat.studio:main"
+
+[tool.setuptools]
+packages = ["chat"]
 
 [tool.uv]
 package = true

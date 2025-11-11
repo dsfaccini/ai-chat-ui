@@ -5,15 +5,9 @@ from __future__ import annotations as _annotations
 import argparse
 import importlib
 import importlib.metadata
-import json
-import os
-import re
 import secrets
 import socket
-import subprocess
 import sys
-from pathlib import Path
-from typing import Any
 
 import httpx
 import questionary  # type: ignore[import-untyped]
@@ -21,11 +15,15 @@ import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic_ai import Agent
 
-from .cli.agent_discovery import find_agents
+from .cli.config_file import (
+    get_config_path,
+    load_config,
+    save_config,
+    BASE_DOMAIN,
+)
+from .cli.slug_generation import prompt_for_slug
 
-BASE_DOMAIN = 'pydantic.work'
-CONFIG_DIR_NAME = '.pydantic-work'
-CONFIG_FILE_NAME = 'config.json'
+from .cli.agent_discovery import find_agents
 
 
 def get_version() -> str:
@@ -34,187 +32,6 @@ def get_version() -> str:
         return importlib.metadata.version('pydantic-work')
     except importlib.metadata.PackageNotFoundError:
         return 'dev'
-
-
-def check_api_keys() -> None:
-    """Check if any supported API keys are set and provide helpful error if not."""
-    supported_keys = {
-        'ANTHROPIC_API_KEY': 'Anthropic (Claude)',
-        'OPENAI_API_KEY': 'OpenAI (GPT)',
-        'GOOGLE_API_KEY': 'Google (Gemini)',
-        'MISTRAL_API_KEY': 'Mistral',
-        'GROQ_API_KEY': 'Groq',
-    }
-
-    # Check which keys are set
-    available_keys = [key for key in supported_keys if os.getenv(key)]
-
-    if not available_keys:
-        print('\n❌ No API keys found!')
-        print(
-            '\n\033[38;2;230;32;233mPydantic Work\033[0m requires at least one LLM API key to be set.'
-        )
-        print('Supported providers:')
-        print()
-        for key, provider in supported_keys.items():
-            print(f'  {provider}:')
-            print(f'    export {key}="your-key-here"')
-            print()
-        print('💡 Tip: Add your API key to a .env file and run:')
-        print('   source .env && pydantic-work chatbot.agent:agent')
-        sys.exit(1)
-
-    # Show which keys are available
-    providers = ', '.join(supported_keys[key] for key in available_keys)
-    print(f'🔑 API keys found: {providers}')
-
-
-def get_project_root() -> Path:
-    """Get the project root directory (current working directory)."""
-    return Path.cwd()
-
-
-def get_config_dir() -> Path:
-    """Get the config directory for the current project."""
-    project_root = get_project_root()
-    config_dir = project_root / CONFIG_DIR_NAME
-    config_dir.mkdir(exist_ok=True)
-
-    # Create .gitignore in config dir
-    gitignore_path = config_dir / '.gitignore'
-    if not gitignore_path.exists():
-        gitignore_path.write_text('*\n')
-
-    return config_dir
-
-
-def get_config_path() -> Path:
-    """Get the config file path."""
-    return get_config_dir() / CONFIG_FILE_NAME
-
-
-def load_config() -> dict[str, Any] | None:
-    """Load config from disk."""
-    config_path = get_config_path()
-    if not config_path.exists():
-        return None
-
-    try:
-        with open(config_path) as f:
-            return json.load(f)
-    except Exception as e:
-        print(f'⚠️  Warning: Failed to load config: {e}')
-        return None
-
-
-def save_config(config: dict[str, Any]) -> None:
-    """Save config to disk."""
-    config_path = get_config_path()
-    with open(config_path, 'w') as f:
-        json.dump(config, f, indent=2)
-
-
-def get_git_username() -> str | None:
-    """Try to get git username from git config."""
-    try:
-        # Try github.user first
-        result = subprocess.run(
-            ['git', 'config', 'github.user'],
-            capture_output=True,
-            text=True,
-            timeout=2,
-        )
-        if result.returncode == 0 and result.stdout.strip():
-            return result.stdout.strip()
-
-        # Fall back to user.name
-        result = subprocess.run(
-            ['git', 'config', 'user.name'],
-            capture_output=True,
-            text=True,
-            timeout=2,
-        )
-        if result.returncode == 0 and result.stdout.strip():
-            return result.stdout.strip()
-    except Exception:
-        pass
-
-    return None
-
-
-def sanitize_slug_part(s: str) -> str:
-    """Sanitize a string to be slug-compatible."""
-    # Convert to lowercase
-    s = s.lower()
-    # Replace spaces and underscores with hyphens
-    s = s.replace(' ', '-').replace('_', '-')
-    # Remove any characters that aren't alphanumeric or hyphens
-    s = re.sub(r'[^a-z0-9-]', '', s)
-    # Remove consecutive hyphens
-    s = re.sub(r'-+', '-', s)
-    # Remove leading/trailing hyphens
-    s = s.strip('-')
-    return s
-
-
-def generate_suggested_slug() -> str:
-    """Generate a suggested slug from git username and directory name."""
-    git_user = get_git_username()
-    dir_name = get_project_root().name
-
-    parts: list[str] = []
-    if git_user:
-        parts.append(sanitize_slug_part(git_user))
-    parts.append(sanitize_slug_part(dir_name))
-
-    slug = '-'.join(parts)
-
-    # Ensure it matches the regex and is within length limits
-    slug = sanitize_slug_part(slug)
-    if len(slug) > 63:
-        slug = slug[:63]
-    slug = slug.strip('-')
-
-    # Validate with regex
-    if not re.match(r'^[a-z0-9-]{1,63}$', slug):
-        # Fallback to just directory name
-        slug = sanitize_slug_part(dir_name)
-        if len(slug) > 63:
-            slug = slug[:63]
-        slug = slug.strip('-')
-
-    return slug or 'my-project'
-
-
-def prompt_for_slug() -> str:
-    """Prompt the user for a slug, with a suggested default."""
-    suggested = generate_suggested_slug()
-
-    print('\n🏷️  Choose a slug for your project')
-    print(f'   This will be used as: https://{suggested}.{BASE_DOMAIN}/')
-
-    while True:
-        slug = questionary.text(
-            'Slug:',
-            default=suggested,
-            instruction='(1-63 chars, lowercase alphanumeric and hyphens)',
-        ).ask()
-
-        if not slug:
-            # User cancelled
-            print('❌ Cancelled')
-            sys.exit(0)
-
-        slug = slug.strip()
-
-        # Validate
-        if not re.match(r'^[a-z0-9-]{1,63}$', slug):
-            print(
-                '❌ Invalid slug. Must be 1-63 characters, lowercase alphanumeric and hyphens only.\n'
-            )
-            continue
-
-        return slug
 
 
 def get_free_port(preferred_port: int | None = None) -> int:
@@ -277,7 +94,7 @@ def load_agent_from_string(agent_string: str) -> Agent:
     if ':' not in agent_string:
         raise ValueError(
             f"Invalid agent string '{agent_string}'. "
-            f"Expected format: 'module.path:agent_variable' (e.g., 'chatbot.agent:agent')"
+            f"Expected format: 'module.path:agent_variable' (e.g., 'src.golden_gate_bridge:agent')"
         )
 
     module_path, agent_name = agent_string.split(':', 1)
@@ -319,14 +136,14 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  pydantic-work chatbot.agent:agent
+  pydantic-work src.golden_gate_bridge:agent
   pydantic-work my_agent:my_agent_instance
-  pydantic-work --localhost chatbot.agent:agent
+  pydantic-work --localhost src.golden_gate_bridge:agent
         """,
     )
     parser.add_argument(
         'agent',
-        help="Agent to load in format 'module.path:agent_variable' (e.g., 'chatbot.agent:agent')",
+        help="Agent to load in format 'module.path:agent_variable' (e.g., 'src.golden_gate_bridge:agent')",
     )
     parser.add_argument(
         '--localhost',
@@ -393,9 +210,6 @@ Examples:
     else:
         args = parser.parse_args()
 
-    # Check for API keys before loading agent
-    check_api_keys()
-
     # Load the agent
     print(f'📦 Loading agent from {args.agent}... (this may take a few seconds)')
     try:
@@ -433,8 +247,8 @@ Examples:
         allow_headers=['*'],
     )
 
-    # Patch the server's agent
-    server.agent = agent_instance
+    # Store the agent in app state
+    server.app.state.agent = agent_instance
 
     # Load or create config
     config = load_config()

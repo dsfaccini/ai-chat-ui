@@ -10,7 +10,7 @@ from typing import NamedTuple
 class AgentInfo(NamedTuple):
     """Information about a discovered agent."""
 
-    module_path: str  # e.g., "chatbot.agent:agent"
+    module_path: str  # e.g., "src.golden_gate_bridge:agent"
     file_path: Path
     agent_name: str
 

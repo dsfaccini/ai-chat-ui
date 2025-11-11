@@ -1,16 +1,9 @@
-from __future__ import annotations as _annotations
+from typing import Annotated, Literal
 
-from pathlib import Path
-from typing import Literal
-
-import fastapi
-import httpx
-import logfire
-from fastapi import Request, Response
-from fastapi.responses import FileResponse, HTMLResponse
-from fastapi.staticfiles import StaticFiles
+from fastapi import APIRouter, Depends, Request, Response
 from pydantic import BaseModel
 from pydantic.alias_generators import to_camel
+from pydantic_ai import Agent
 
 from pydantic_ai.builtin_tools import (
     AbstractBuiltinTool,
@@ -20,17 +13,14 @@ from pydantic_ai.builtin_tools import (
 )
 from pydantic_ai.ui.vercel_ai import VercelAIAdapter
 
-from .agent import agent
-
-# 'if-token-present' means nothing will be sent (and the example will work) if you don't have logfire configured
-logfire.configure(send_to_logfire='if-token-present', console=False)
-logfire.instrument_pydantic_ai()
-
-app = fastapi.FastAPI()
-logfire.instrument_fastapi(app)
+from .cli.config_file import get_project_root
+from .dependencies import get_agent
 
 
-@app.options('/api/chat')
+router = APIRouter()
+
+
+@router.options('/api/chat')
 def options_chat():
     pass
 
@@ -98,17 +88,19 @@ AI_MODELS: list[AIModel] = [
 class ConfigureFrontend(BaseModel, alias_generator=to_camel, populate_by_name=True):
     models: list[AIModel]
     builtin_tools: list[BuiltinTool]
+    project_path: str  # absolute path of the project root
 
 
-@app.get('/api/configure')
+@router.get('/api/configure')
 async def configure_frontend() -> ConfigureFrontend:
     return ConfigureFrontend(
         models=AI_MODELS,
         builtin_tools=BUILTIN_TOOL_DEFS,
+        project_path=str(get_project_root()),
     )
 
 
-@app.get('/api/health')
+@router.get('/api/health')
 async def health() -> dict[str, bool]:
     return {'ok': True}
 
@@ -118,9 +110,10 @@ class ChatRequestExtra(BaseModel, extra='ignore', alias_generator=to_camel):
     builtin_tools: list[BuiltinToolID] = []
 
 
-@app.post('/api/chat')
-async def post_chat(request: Request) -> Response:
-    # copy
+@router.post('/api/chat')
+async def post_chat(
+    request: Request, agent: Annotated[Agent, Depends(get_agent)]
+) -> Response:
     adapter = await VercelAIAdapter.from_request(request, agent=agent)
     extra_data = ChatRequestExtra.model_validate(adapter.run_input.__pydantic_extra__)
     streaming_response = await VercelAIAdapter.dispatch_request(
@@ -130,37 +123,3 @@ async def post_chat(request: Request) -> Response:
         builtin_tools=[BUILTIN_TOOLS[tool_id] for tool_id in extra_data.builtin_tools],
     )
     return streaming_response
-
-
-@app.get('/')
-@app.get('/{id}')
-async def index(request: Request):
-    async with httpx.AsyncClient() as client:
-        response = await client.get(
-            'https://cdn.jsdelivr.net/npm/@pydantic/ai-chat-ui@0.0.2/dist/index.html'
-        )
-        return HTMLResponse(content=response.content, status_code=response.status_code)
-
-
-# Development endpoints - these require dist/ assets which are not packaged
-root_path = Path(__file__).parent.parent.parent
-dist_path = root_path / 'dist'
-assets_path = dist_path / 'assets'
-
-# Conditionally mount development endpoints only if assets exist
-if dist_path.exists() and assets_path.exists():
-    # Mount static assets for development
-    app.mount('/assets', StaticFiles(directory=assets_path), name='assets')
-
-    @app.get('/dev')
-    async def preview_build():
-        """Development endpoint to preview local build."""
-        return FileResponse((dist_path / 'index.html').as_posix())
-
-    @app.get('/favicon.ico')
-    async def favicon():
-        """Fallback favicon for development."""
-        favicon_path = root_path / 'public/favicon.ico'
-        if favicon_path.exists():
-            return FileResponse(favicon_path.as_posix())
-        return Response(status_code=404)

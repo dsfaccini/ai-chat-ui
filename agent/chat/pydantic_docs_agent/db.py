@@ -2,7 +2,7 @@ import lancedb
 from lancedb.embeddings import get_registry
 from lancedb.pydantic import LanceModel, Vector  # type: ignore
 
-from chatbot.data import get_docs_rows, Repo
+from .data import get_docs_rows, Repo
 
 db = lancedb.connect('/tmp/lancedb-pydantic-ai-chat')
 

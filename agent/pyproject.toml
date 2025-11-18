@@ -1,6 +1,6 @@
 [project]
 name = "pydantic-work"
-version = "0.1.10"
+version = "0.1.11"
 description = "A local-first chat UI for Pydantic AI agents"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -38,7 +38,7 @@ Twitter = "https://x.com/dasfacc"
 pydantic-work = "chat.studio:main"
 
 [tool.setuptools]
-packages = ["chat"]
+packages = ["chat", "chat.cli"]
 
 [tool.uv]
 package = true

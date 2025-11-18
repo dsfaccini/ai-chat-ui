@@ -94,7 +94,7 @@ def load_agent_from_string(agent_string: str) -> Agent:
     if ':' not in agent_string:
         raise ValueError(
             f"Invalid agent string '{agent_string}'. "
-            f"Expected format: 'module.path:agent_variable' (e.g., 'src.golden_gate_bridge:agent')"
+            f"Expected format: 'module.path:agent_variable' (e.g., 'chat.golden_gate_bridge:agent')"
         )
 
     module_path, agent_name = agent_string.split(':', 1)
@@ -136,14 +136,14 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  pydantic-work src.golden_gate_bridge:agent
+  pydantic-work chat.golden_gate_bridge:agent
   pydantic-work my_agent:my_agent_instance
-  pydantic-work --localhost src.golden_gate_bridge:agent
+  pydantic-work --localhost chat.golden_gate_bridge:agent
         """,
     )
     parser.add_argument(
         'agent',
-        help="Agent to load in format 'module.path:agent_variable' (e.g., 'src.golden_gate_bridge:agent')",
+        help="Agent to load in format 'module.path:agent_variable' (e.g., 'chat.golden_gate_bridge:agent')",
     )
     parser.add_argument(
         '--localhost',
@@ -179,7 +179,7 @@ Examples:
         if not agents:
             print('❌ No agents found in this codebase')
             print('\n💡 Learn how to create an agent:')
-            print('   https://ai.pydantic.dev/examples/ag-ui/#agent-prompts')
+            print('   https://ai.pydantic.dev/agents/#system-prompts')
             sys.exit(0)
 
         # Let user select an agent
@@ -195,11 +195,9 @@ Examples:
         ).ask()
 
         if not selected:
-            # User cancelled
             print('❌ Cancelled')
             sys.exit(0)
 
-        # Create a mock args object with the selected agent
         class Args:
             def __init__(self):
                 self.agent = selected

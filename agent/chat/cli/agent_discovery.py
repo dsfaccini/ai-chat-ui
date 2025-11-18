@@ -10,7 +10,7 @@ from typing import NamedTuple
 class AgentInfo(NamedTuple):
     """Information about a discovered agent."""
 
-    module_path: str  # e.g., "src.golden_gate_bridge:agent"
+    module_path: str  # e.g., "chat.golden_gate_bridge:agent"
     file_path: Path
     agent_name: str
 
@@ -57,7 +57,7 @@ def _file_to_module_path(file_path: Path, root_dir: Path) -> str | None:
         root_dir: The root directory of the project.
 
     Returns:
-        The module path (e.g., "src.my_agent") or None if conversion fails.
+        The module path (e.g., "chat.my_agent") or None if conversion fails.
     """
     try:
         # Get relative path from root

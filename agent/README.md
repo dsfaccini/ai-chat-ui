@@ -5,7 +5,7 @@ A local-first chat UI for your [Pydantic AI](https://ai.pydantic.dev/) agents.
 ```bash
 uvx pydantic-work <module>:<agent variable>
 
-# e.g. uvx pydantic-work src.my_agent:agent
+# e.g. uvx pydantic-work chat.my_agent:agent
 ```
 
 ## What is it?
@@ -19,28 +19,32 @@ Pydantic Chat provides a beautiful web interface for interacting with your Pydan
 ## Installation
 
 ```bash
-# Install with uv
-uv tool install pydantic-work
+# Run with uvx
+uvx pydantic-work
 
-# Or install in development mode
+# Or clone the repo and run locally
+gh repo clone dsfaccini/ai-chat-ui
 cd agent
-uv pip install -e ".[cli]"
+uv run pydantic-work
 ```
 
 ## Usage
 
 ```bash
+# Or install with uv as a tool
+uv tool install pydantic-work
+
 # Basic usage
-pydantic-work module.path:agent_variable
+uvx pydantic-work module.path:agent_variable
 
 # Example
-pydantic-work src.golden_gate_bridge:agent
+pydantic-work chat.golden_gate_bridge:agent
 
 # Localhost-only mode (skip remote registration)
-pydantic-work --localhost src.golden_gate_bridge:agent
+pydantic-work --localhost chat.golden_gate_bridge:agent
 
 # Custom port
-pydantic-work --port 8000 src.golden_gate_bridge:agent
+pydantic-work --port 8000 chat.golden_gate_bridge:agent
 ```
 
 ## How It Works
@@ -76,7 +80,7 @@ def get_current_time() -> str:
 Run it:
 
 ```bash
-pydantic-work src.my_agent:agent
+pydantic-work chat.my_agent:agent
 ```
 
 ## Configuration

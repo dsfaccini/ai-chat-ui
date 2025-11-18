@@ -35,8 +35,6 @@ interface ModelConfig {
   builtin_tools: string[]
 }
 
-// XXX: hard-code icons
-
 interface BuiltinTool {
   name: string
   id: string
@@ -44,8 +42,6 @@ interface BuiltinTool {
 
 // TODO: if just a single model, don't show model selector, just a label.
 interface RemoteConfig {
-  // hard-code matching icons for popular tools, use default wrench for the unrecognized.
-  // known ones: web_search, code_execution, image_generation, web_fetch
   models: ModelConfig[]
   builtinTools: BuiltinTool[]
 }

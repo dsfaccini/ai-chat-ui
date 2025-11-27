@@ -23,17 +23,6 @@ app.state.agent = None
 
 app.include_router(api_router)
 
-
-@app.get('/')
-@app.get('/{id}')
-async def index(request: Request):
-    async with httpx.AsyncClient() as client:
-        response = await client.get(
-            'https://cdn.jsdelivr.net/npm/@pydantic/ai-chat-ui@0.0.2/dist/index.html'
-        )
-        return HTMLResponse(content=response.content, status_code=response.status_code)
-
-
 # Development endpoints - these require dist/ assets which are not packaged
 root_path = Path(__file__).parent.parent.parent
 dist_path = root_path / 'dist'
@@ -41,18 +30,27 @@ assets_path = dist_path / 'assets'
 
 # Conditionally mount development endpoints only if assets exist
 if dist_path.exists() and assets_path.exists():
-    # Mount static assets for development
-    app.mount('/assets', StaticFiles(directory=assets_path), name='assets')
-
-    @app.get('/dev')
-    async def preview_build():
-        """Development endpoint to preview local build."""
+    @app.get('/')
+    @app.get('/{id}')
+    async def index(request: Request):
         return FileResponse((dist_path / 'index.html').as_posix())
 
-    @app.get('/favicon.ico')
-    async def favicon():
-        """Fallback favicon for development."""
-        favicon_path = root_path / 'public/favicon.ico'
-        if favicon_path.exists():
-            return FileResponse(favicon_path.as_posix())
-        return Response(status_code=404)
+    # Mount static assets for development
+    app.mount('/assets', StaticFiles(directory=assets_path), name='assets')
+else:
+    @app.get('/')
+    @app.get('/{id}')
+    async def index(request: Request):
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                'https://cdn.jsdelivr.net/npm/@pydantic/ai-chat-ui@0.0.2/dist/index.html'
+            )
+            return HTMLResponse(content=response.content, status_code=response.status_code)
+
+@app.get('/favicon.ico')
+async def favicon():
+    """Fallback favicon for development."""
+    favicon_path = root_path / 'public/favicon.ico'
+    if favicon_path.exists():
+        return FileResponse(favicon_path.as_posix())
+    return Response(status_code=404)

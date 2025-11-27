@@ -20,6 +20,7 @@ import { Switch } from '@/components/ui/switch'
 import { useChat } from '@ai-sdk/react'
 import { Settings2Icon, WifiOffIcon } from 'lucide-react'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type FormEvent } from 'react'
+import { useHeartbeat } from '@/hooks/useHeartbeat'
 
 import { useQuery } from '@tanstack/react-query'
 import { useThrottle } from '@uidotdev/usehooks'
@@ -28,6 +29,7 @@ import { useConversationIdFromUrl } from './hooks/useConversationIdFromUrl'
 import { Part } from './Part'
 import type { ConversationEntry } from './types'
 import { getToolIcon } from '@/lib/tool-icons'
+import { useProjectPathCookie } from '@/hooks/useProjectPathCookie'
 
 interface ModelConfig {
   id: string
@@ -44,6 +46,7 @@ interface BuiltinTool {
 interface RemoteConfig {
   models: ModelConfig[]
   builtinTools: BuiltinTool[]
+  projectPath: string
 }
 
 async function getModels() {
@@ -55,17 +58,15 @@ const Chat = () => {
   const [input, setInput] = useState('')
   const [model, setModel] = useState<string>('')
   const [enabledTools, setEnabledTools] = useState<string[]>([])
-  const { messages, sendMessage, status, setMessages, regenerate, error } = useChat()
+  const { messages, sendMessage, status, setMessages, regenerate, error: chatError } = useChat()
   const throttledMessages = useThrottle(messages, 500)
   const [conversationId, setConversationId] = useConversationIdFromUrl()
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   // Heartbeat monitoring
   const [apiBase, setApiBase] = useState<string>('')
-  const [serverReachable, setServerReachable] = useState<boolean>(true)
-  const [consecutiveFailures, setConsecutiveFailures] = useState<number>(0)
-  const backoffIntervalRef = useRef<number>(5000) // Start at 5 seconds
-  const heartbeatTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [projectPath, setProjectPath] = useState<string>('')
+  const serverReachable = useHeartbeat(apiBase)
 
   const configQuery = useQuery({
     queryFn: getModels,
@@ -129,60 +130,18 @@ const Chat = () => {
     const base = (window as unknown as { __AI_CHAT_UI_API_BASE__: string | undefined }).__AI_CHAT_UI_API_BASE__ ?? ''
     setApiBase(base)
   }, [])
-
-  // Heartbeat monitoring with exponential backoff
+  // Store projectPath from configure endpoint
   useEffect(() => {
-    if (!apiBase) {
-      // No custom API base, assume same-origin which is always reachable
-      return
+    if (configQuery.data?.projectPath) {
+      setProjectPath(configQuery.data.projectPath)
     }
+  }, [configQuery.data])
 
-    const checkHealth = async () => {
-      try {
-        // Fetch is globally overridden, so just call /api/health
-        const response = await fetch('/api/health', {
-          method: 'GET',
-          signal: AbortSignal.timeout(5000), // 5 second timeout
-        })
+  // Write projectPath into shared cookie
+  useProjectPathCookie(projectPath)
 
-        if (response.ok) {
-          // Server is reachable
-          if (!serverReachable) {
-            setServerReachable(true)
-          }
-          setConsecutiveFailures(0)
-        } else {
-          throw new Error('Health check failed')
-        }
-      } catch (_error) {
-        // Server is not reachable
-        const newFailures = consecutiveFailures + 1
-        setConsecutiveFailures(newFailures)
-
-        if (newFailures >= 2) {
-          setServerReachable(false)
-        }
-      }
-
-      // Exponential backoff: double the interval each time, max 60 seconds
-      backoffIntervalRef.current = Math.min(backoffIntervalRef.current * 2, 60000 * 5) // 5 minutes
-
-      // Schedule next check
-      heartbeatTimeoutRef.current = setTimeout(checkHealth, backoffIntervalRef.current)
-    }
-
-    // Start initial check
-    heartbeatTimeoutRef.current = setTimeout(checkHealth, backoffIntervalRef.current)
-
-    // Cleanup on unmount or apiBase change
-    return () => {
-      if (heartbeatTimeoutRef.current) {
-        clearTimeout(heartbeatTimeoutRef.current)
-      }
-      // Reset backoff on apiBase change
-      backoffIntervalRef.current = 5000
-    }
-  }, [apiBase, serverReachable, consecutiveFailures])
+  // Heartbeat monitoring via hook
+  // (handled by useHeartbeat)
 
   function regen(messageId: string) {
     regenerate({ messageId }).catch((error: unknown) => {
@@ -232,9 +191,9 @@ const Chat = () => {
             </div>
           ))}
           {status === 'submitted' && <Loader />}
-          {status === 'error' && error && (
+          {status === 'error' && chatError && (
             <div className="px-4 py-3 mx-4 my-2 bg-destructive/10 border border-destructive/20 rounded-md text-destructive text-sm">
-              <strong>Error:</strong> {error.message}
+              <strong>Error:</strong> {chatError.message}
             </div>
           )}
         </ConversationContent>
@@ -329,6 +288,12 @@ const Chat = () => {
             <div className="flex flex-col gap-0.5">
               <p className="text-sm font-medium">Cannot reach local server</p>
               <p className="text-xs opacity-90">{apiBase}</p>
+              {projectPath && (
+                <>
+                  <p className="text-xs opacity-90">Restart the server at</p>
+                  <pre className="text-xs opacity-90 font-mono">cd {projectPath} && uvx pydantic-work</pre>
+                </>
+              )}
             </div>
           </div>
         </div>

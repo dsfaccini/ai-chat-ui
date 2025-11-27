@@ -1,0 +1,66 @@
+/**
+ * For more details on how to configure Wrangler, refer to:
+ * https://developers.cloudflare.com/workers/wrangler/configuration/
+ */
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "pydantic-chat",
+	"main": "src/index.ts",
+	"compatibility_date": "2025-11-09",
+	"assets": {
+		"directory": "../dist",
+		"binding": "ASSETS",
+		"html_handling": "none",
+		"not_found_handling": "none"
+	},
+	"observability": {
+		"enabled": true
+	},
+
+	"kv_namespaces": [
+		{
+			"binding": "REGISTRY",
+			"id": "133b5d294a7c46ac96c33bfd8cb19111",
+		}
+	],
+
+	"vars": {
+		"BASE_DOMAIN": "pydantic.work"
+	},
+
+	"routes": [
+		{
+			"zone_id": "20e0476c0f0757be4be912e2552e33ef",
+			"pattern": "pydantic.work/*"
+		},
+		{
+			"zone_id": "20e0476c0f0757be4be912e2552e33ef",
+			"pattern": "*.pydantic.work/*"
+		}
+	]
+	/**
+	 * Bindings
+	 * Bindings allow your Worker to interact with resources on the Cloudflare Developer Platform, including
+	 * databases, object storage, AI inference, real-time communication and more.
+	 * https://developers.cloudflare.com/workers/runtime-apis/bindings/
+	 */
+	/**
+	 * Environment Variables
+	 * https://developers.cloudflare.com/workers/wrangler/configuration/#environment-variables
+	 */
+	// "vars": { "MY_VARIABLE": "production_value" }
+	/**
+	 * Note: Use secrets to store sensitive data.
+	 * https://developers.cloudflare.com/workers/configuration/secrets/
+	 */
+	/**
+	 * Static Assets
+	 * https://developers.cloudflare.com/workers/static-assets/binding/
+	 */
+	// "assets": { "directory": "./public/", "binding": "ASSETS" }
+	/**
+	 * Service Bindings (communicate between multiple Workers)
+	 * https://developers.cloudflare.com/workers/wrangler/configuration/#service-bindings
+	 */
+	// "services": [{ "binding": "MY_SERVICE", "service": "my-service" }]
+}

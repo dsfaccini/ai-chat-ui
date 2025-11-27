@@ -26,6 +26,7 @@ import {
 } from '@/components/ui/sidebar'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useConversationIdFromUrl } from '@/hooks/useConversationIdFromUrl'
+import { useProjectPathFromCookie } from '@/hooks/useProjectPathCookie'
 import { cn } from '@/lib/utils'
 import type { ConversationEntry } from '@/types'
 import { ModeToggle } from './mode-toggle'
@@ -96,6 +97,7 @@ function deleteConversation(conversationId: string) {
 
 export function AppSidebar() {
   const conversations = useConversations()
+  const projectPath = useProjectPathFromCookie()
   const [conversationId] = useConversationIdFromUrl()
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [conversationToDelete, setConversationToDelete] = useState<ConversationEntry | null>(null)
@@ -121,11 +123,14 @@ export function AppSidebar() {
       <Sidebar collapsible="icon">
         <SidebarHeader>
           <SidebarTrigger className="ml-auto" />
-          <div className="ml-2 flex items-center">
+          <div className="ml-2 flex flex-col">
             <h1 className="text-l font-medium text-balance truncate whitespace-nowrap">
               <img src="/logo.svg" className="inline h-4 mr-2 mb-1" />
               <span className="group-data-[state=collapsed]:invisible">Pydantic AI</span>
             </h1>
+            {projectPath && (
+              <p className="text-xs opacity-50 truncate group-data-[state=collapsed]:hidden">{projectPath}</p>
+            )}
           </div>
         </SidebarHeader>
 

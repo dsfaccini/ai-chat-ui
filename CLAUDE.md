@@ -73,8 +73,8 @@ Note: Stop any logfire platform instances to avoid port 8000 conflicts.
 
 - `GET /api/configure`: Returns available models and builtin tools (camelCase)
 - `POST /api/chat`: Handles chat messages via `VercelAIAdapter`
-  - Accepts `model` and `builtinTools` in request body extra data
-  - Streams responses using SSE
+    - Accepts `model` and `builtinTools` in request body extra data
+    - Streams responses using SSE
 
 **Builtin Tools:**
 

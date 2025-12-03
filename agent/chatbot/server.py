@@ -3,7 +3,6 @@ from __future__ import annotations as _annotations
 from typing import Literal
 
 import fastapi
-import httpx
 import logfire
 from fastapi import Request, Response
 from fastapi.responses import HTMLResponse
@@ -18,6 +17,7 @@ from pydantic_ai.builtin_tools import (
 from pydantic_ai.ui.vercel_ai import VercelAIAdapter
 
 from .agent import agent
+from .html import fetch_ui_html
 
 # 'if-token-present' means nothing will be sent (and the example will work) if you don't have logfire configured
 logfire.configure(send_to_logfire='if-token-present')
@@ -123,10 +123,12 @@ async def post_chat(request: Request) -> Response:
 
 
 @app.get('/')
-@app.get('/{id}')
+@app.get('/{path:path}')
 async def index(request: Request):
-    async with httpx.AsyncClient() as client:
-        response = await client.get(
-            'https://cdn.jsdelivr.net/npm/@pydantic/ai-chat-ui@0.0.2/dist/index.html'
-        )
-        return HTMLResponse(content=response.content, status_code=response.status_code)
+    # Get the base path from ASGI root_path (set when app is mounted at sub-path)
+    base_path = request.scope.get('root_path', '') or '/'
+    if not base_path.endswith('/'):
+        base_path += '/'
+
+    html = await fetch_ui_html(base_path)
+    return HTMLResponse(content=html)

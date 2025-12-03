@@ -18,6 +18,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/compon
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { Switch } from '@/components/ui/switch'
 import { useChat } from '@ai-sdk/react'
+import { DefaultChatTransport } from 'ai'
 import { Settings2Icon } from 'lucide-react'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 
@@ -47,7 +48,7 @@ interface RemoteConfig {
 }
 
 async function getModels() {
-  const res = await fetch('/api/configure')
+  const res = await fetch('api/configure')
   return (await res.json()) as RemoteConfig
 }
 
@@ -55,7 +56,9 @@ const Chat = () => {
   const [input, setInput] = useState('')
   const [model, setModel] = useState<string>('')
   const [enabledTools, setEnabledTools] = useState<string[]>([])
-  const { messages, sendMessage, status, setMessages, regenerate, error } = useChat()
+  const { messages, sendMessage, status, setMessages, regenerate, error } = useChat({
+    transport: new DefaultChatTransport({ api: 'api/chat' }),
+  })
   const throttledMessages = useThrottle(messages, 500)
   const [conversationId, setConversationId] = useConversationIdFromUrl()
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -86,17 +89,12 @@ const Chat = () => {
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault()
     if (input.trim()) {
-      const theCurrentUrl = new URL(window.location.toString())
-
       // we're starting a new conversation
-      if (theCurrentUrl.pathname === '/') {
-        const newConversationId = `/${nanoid()}`
+      if (conversationId === '/') {
+        const newConversationId = nanoid()
         setConversationId(newConversationId)
 
         saveConversationEntryInLocalStorage(newConversationId, input)
-
-        theCurrentUrl.pathname = newConversationId
-        window.history.pushState({}, '', theCurrentUrl.toString())
       }
 
       sendMessage(

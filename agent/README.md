@@ -53,7 +53,7 @@ pydantic-work --port 8000 chat.golden_gate_bridge:agent
 2. **Remote Access (Optional):** On first run, you'll be prompted to choose a project slug (e.g., `my-project`)
 3. **Two URLs:** Access your chat via:
    - Local: `http://127.0.0.1:PORT`
-   - Remote: `https://your-project.pydantic.work/` (if registered)
+   - Remote: `https://your-project.pydantic.chat/` (if registered)
 
 Your agent code and data never leave your machine. The remote URL just provides the frontend.
 
@@ -94,8 +94,8 @@ On first run, Pydantic Chat creates `.pydantic-work/config.json` in your project
 Each project directory gets its own config, so you can run multiple agents with different slugs:
 
 ```bash
-cd project-a && pydantic-work agent:agent  # -> project-a.pydantic.work
-cd project-b && pydantic-work agent:agent  # -> project-b.pydantic.work
+cd project-a && pydantic-work agent:agent  # -> project-a.pydantic.chat
+cd project-b && pydantic-work agent:agent  # -> project-b.pydantic.chat
 ```
 
 ## Troubleshooting

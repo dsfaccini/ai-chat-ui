@@ -25,17 +25,17 @@
 	],
 
 	"vars": {
-		"BASE_DOMAIN": "pydantic.work"
+		"BASE_DOMAIN": "pydantic.chat"
 	},
 
 	"routes": [
 		{
 			"zone_id": "20e0476c0f0757be4be912e2552e33ef",
-			"pattern": "pydantic.work/*"
+			"pattern": "pydantic.chat/*"
 		},
 		{
 			"zone_id": "20e0476c0f0757be4be912e2552e33ef",
-			"pattern": "*.pydantic.work/*"
+			"pattern": "*.pydantic.chat/*"
 		}
 	]
 	/**

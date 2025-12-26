@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-BASE_DOMAIN = 'pydantic.work'
+BASE_DOMAIN = 'pydantic.chat'
 
 CONFIG_DIR_NAME = '.pydantic-work'
 CONFIG_FILE_NAME = 'config.json'

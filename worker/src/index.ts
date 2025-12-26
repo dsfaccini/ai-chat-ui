@@ -77,7 +77,7 @@ async function handleSubdomainIndex(slug: string, request: Request, env: Env): P
   const injectionScript = patchGlobalFetch(apiBase)
 
   // Inject tracking script that uses cookies (shared across subdomains)
-  const baseDomain = env.BASE_DOMAIN || 'pydantic.work'
+  const baseDomain = env.BASE_DOMAIN || 'pydantic.chat'
 
   const trackingScript = generateTrackingScript(slug, baseDomain)
 

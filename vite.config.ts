@@ -13,6 +13,7 @@ export default defineConfig(({ command, mode }) => ({
     react(),
     tailwindcss(),
     tsconfigPaths({
+      root: __dirname,
       // Silence warnings about malformed tsconfig.json files in cache directories
       ignoreConfigErrors: true,
       // Skip cache directories when searching for tsconfig files

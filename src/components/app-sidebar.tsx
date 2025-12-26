@@ -30,6 +30,7 @@ import { useProjectPathFromCookie } from '@/hooks/useProjectPathCookie'
 import { cn } from '@/lib/utils'
 import type { ConversationEntry } from '@/types'
 import { ModeToggle } from './mode-toggle'
+import logoSvg from '../assets/logo.svg'
 
 function useConversations(): ConversationEntry[] {
   const [conversations, setConversations] = useState<ConversationEntry[]>(() => {
@@ -125,7 +126,7 @@ export function AppSidebar() {
           <SidebarTrigger className="ml-auto" />
           <div className="ml-2 flex flex-col">
             <h1 className="text-l font-medium text-balance truncate whitespace-nowrap">
-              <img src="/logo.svg" className="inline h-4 mr-2 mb-1" />
+              <img src={logoSvg} className="inline h-4 mr-2 mb-1" />
               <span className="group-data-[state=collapsed]:invisible">Pydantic AI</span>
             </h1>
             {projectPath && (

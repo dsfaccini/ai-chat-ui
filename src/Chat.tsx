@@ -34,7 +34,7 @@ import { useProjectPathCookie } from '@/hooks/useProjectPathCookie'
 interface ModelConfig {
   id: string
   name: string
-  builtin_tools: string[]
+  builtinTools: string[]
 }
 
 interface BuiltinTool {
@@ -110,7 +110,7 @@ const Chat = () => {
       sendMessage(
         { text: input },
         {
-          body: { model, builtinTools: enabledTools, webSearch: true },
+          body: { model, builtinTools: enabledTools },
         },
       ).catch((error: unknown) => {
         console.error('Error sending message:', error)
@@ -150,7 +150,7 @@ const Chat = () => {
   }
 
   const availableTools = useMemo(() => {
-    const enabledToolIds = configQuery.data?.models.find((entry) => entry.id === model)?.builtin_tools ?? []
+    const enabledToolIds = configQuery.data?.models.find((entry) => entry.id === model)?.builtinTools ?? []
     return configQuery.data?.builtinTools.filter((tool) => enabledToolIds.includes(tool.id)) ?? []
   }, [configQuery.data, model])
 

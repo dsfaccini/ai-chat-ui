@@ -17,7 +17,7 @@ dependencies = [
     "logfire[fastapi]>=4.9.0",
     "markdown2>=2.5.4",
     "pip>=25.2",
-    "pydantic-ai-slim[anthropic,openai,google,cli]>=1.0.10",
+    "pydantic-ai-slim[anthropic,openai,google,cli]>=1.14.0",
     "pyright>=1.1.405",
     "python-frontmatter>=1.1.0",
     "questionary>=2.0.0",
@@ -45,6 +45,7 @@ package = true
 
 [tool.uv.sources]
 pydantic-ai-slim = { git = "https://github.com/pydantic/pydantic-ai.git", subdirectory = "pydantic_ai_slim", rev = "main" }
+
 
 [tool.ruff.format]
 # don't format python in docstrings, pytest-examples takes care of it

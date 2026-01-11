@@ -1,0 +1,28 @@
+{
+  "name": "Pydantic AI Chat",
+  "description": "A ready-to-deploy chat interface for Pydantic AI agents with support for multiple LLM providers (Claude, GPT, Gemini)",
+  "icon": "https://ai.pydantic.dev/img/logo-white.svg",
+  "services": [
+    {
+      "name": "pydantic-ai-chat",
+      "envVars": {
+        "ANTHROPIC_API_KEY": {
+          "description": "Anthropic API key for Claude models",
+          "required": false
+        },
+        "OPENAI_API_KEY": {
+          "description": "OpenAI API key for GPT models",
+          "required": false
+        },
+        "GOOGLE_API_KEY": {
+          "description": "Google API key for Gemini models",
+          "required": false
+        },
+        "LOGFIRE_TOKEN": {
+          "description": "Pydantic Logfire token for observability (optional)",
+          "required": false
+        }
+      }
+    }
+  ]
+}

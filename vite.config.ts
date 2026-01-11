@@ -7,10 +7,18 @@ import tsconfigPaths from 'vite-tsconfig-paths'
 // 8000 is quite common for backend, avoid the clash
 const BACKEND_DEV_SERVER_PORT = process.env.BACKEND_PORT ?? 38001
 
+// Base URL for production builds:
+// - VITE_BASE_URL=./ for self-hosted deployments (Railway, Docker, etc.)
+// - Default: jsdelivr CDN for npm package distribution
+const getBaseUrl = (command: string) => {
+  if (command !== 'build') return ''
+  return process.env.VITE_BASE_URL ?? 'https://cdn.jsdelivr.net/npm/@pydantic/ai-chat-ui/dist/'
+}
+
 // https://vite.dev/config/
 export default defineConfig(({ command }) => ({
   plugins: [react(), tailwindcss(), tsconfigPaths({ root: __dirname })],
-  base: command === 'build' ? 'https://cdn.jsdelivr.net/npm/@pydantic/ai-chat-ui/dist/' : '',
+  base: getBaseUrl(command),
   build: {
     assetsDir: 'assets',
   },

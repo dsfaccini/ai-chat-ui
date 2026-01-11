@@ -1,0 +1,9 @@
+node_modules/
+.git/
+.github/
+dist/
+agent/.venv/
+__pycache__/
+.env*
+*.md
+.claude/

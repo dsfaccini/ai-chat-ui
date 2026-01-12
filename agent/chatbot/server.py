@@ -22,7 +22,7 @@ app = agent.to_web(
     models={
         'Claude Sonnet 4.5': 'gateway/anthropic:claude-sonnet-4-5',
         'GPT 5': 'gateway/openai:gpt-5',
-        'Gemini 2.5 Pro': 'gateway/google:gemini-2.5-pro',
+        'Gemini 2.5 Pro': 'gateway/gemini:gemini-2.5-pro',
     },
     builtin_tools=[
         WebSearchTool(),

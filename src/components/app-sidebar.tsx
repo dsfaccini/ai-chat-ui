@@ -29,34 +29,29 @@ import { useConversationIdFromUrl } from '@/hooks/useConversationIdFromUrl'
 import { useProjectPathFromCookie } from '@/hooks/useProjectPathCookie'
 import { cn } from '@/lib/utils'
 import type { ConversationEntry } from '@/types'
+import { getConversations, deleteConversation as deleteConv } from '@/lib/chat-db'
+import { stripBasePath, withBasePath } from '@/lib/base-path'
 import { ModeToggle } from './mode-toggle'
 import logoSvg from '../assets/logo.svg'
 
 function useConversations(): ConversationEntry[] {
-  const [conversations, setConversations] = useState<ConversationEntry[]>(() => {
-    const stored = window.localStorage.getItem('conversationIds')
-    return stored ? (JSON.parse(stored) as ConversationEntry[]) : []
-  })
+  const [conversations, setConversations] = useState<ConversationEntry[]>([])
 
   useEffect(() => {
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'conversationIds' && e.newValue) {
-        setConversations(JSON.parse(e.newValue) as ConversationEntry[])
-      }
+    const loadConversations = () => {
+      getConversations()
+        .then(setConversations)
+        .catch((err: unknown) => {
+          console.error('Failed to load conversations:', err)
+        })
     }
 
-    const handleCustomStorageChange = () => {
-      const stored = window.localStorage.getItem('conversationIds')
-      setConversations(stored ? (JSON.parse(stored) as ConversationEntry[]) : [])
-    }
+    loadConversations()
 
-    window.addEventListener('storage', handleStorageChange)
-    // a custom event to handle same-tab updates
-    window.addEventListener('local-storage-change', handleCustomStorageChange)
+    window.addEventListener('conversations-changed', loadConversations)
 
     return () => {
-      window.removeEventListener('storage', handleStorageChange)
-      window.removeEventListener('local-storage-change', handleCustomStorageChange)
+      window.removeEventListener('conversations-changed', loadConversations)
     }
   }, [])
 
@@ -75,25 +70,15 @@ function doLocalNavigation(e: React.MouseEvent) {
 }
 
 function deleteConversation(conversationId: string) {
-  // Remove from conversationIds list
-  const stored = window.localStorage.getItem('conversationIds')
-  if (stored) {
-    const conversations = JSON.parse(stored) as ConversationEntry[]
-    const updated = conversations.filter((conv) => conv.id !== conversationId)
-    window.localStorage.setItem('conversationIds', JSON.stringify(updated))
-    // Dispatch event to notify other components
-    window.dispatchEvent(new Event('local-storage-change'))
-  }
+  return deleteConv(conversationId).then(() => {
+    window.dispatchEvent(new Event('conversations-changed'))
 
-  // Remove the conversation's messages
-  window.localStorage.removeItem(conversationId)
-
-  // If the deleted conversation was active, navigate to home
-  const currentPath = window.location.pathname
-  if (currentPath === conversationId) {
-    window.history.pushState({}, '', '/')
-    window.dispatchEvent(new Event('history-state-changed'))
-  }
+    const currentPath = stripBasePath(window.location.pathname)
+    if (currentPath === conversationId) {
+      window.history.pushState({}, '', withBasePath('/'))
+      window.dispatchEvent(new Event('history-state-changed'))
+    }
+  })
 }
 
 export function AppSidebar() {
@@ -113,9 +98,15 @@ export function AppSidebar() {
   const handleConfirmDelete = () => {
     if (conversationToDelete) {
       deleteConversation(conversationToDelete.id)
-      setDeleteDialogOpen(false)
-      setConversationToDelete(null)
-      toast.success('Chat deleted successfully')
+        .then(() => {
+          setDeleteDialogOpen(false)
+          setConversationToDelete(null)
+          toast.success('Chat deleted successfully')
+        })
+        .catch((err: unknown) => {
+          console.error('Failed to delete conversation:', err)
+          toast.error('Failed to delete chat')
+        })
     }
   }
 
@@ -140,7 +131,7 @@ export function AppSidebar() {
             <SidebarMenu className="mb-2">
               <SidebarMenuItem>
                 <SidebarMenuButton asChild tooltip="Start a new conversation">
-                  <a href="/" onClick={doLocalNavigation}>
+                  <a href={withBasePath('/')} onClick={doLocalNavigation}>
                     <CirclePlus />
                     <span>New conversation</span>
                   </a>
@@ -155,7 +146,7 @@ export function AppSidebar() {
                     <div className="flex items-center gap-1 h-auto">
                       <SidebarMenuButton asChild tooltip={conversation.firstMessage} className="flex-1">
                         <a
-                          href={conversation.id}
+                          href={withBasePath(conversation.id)}
                           onClick={doLocalNavigation}
                           className={cn('h-auto flex items-start gap-2', {
                             'bg-accent pointer-events-none': conversation.id === conversationId,

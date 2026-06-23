@@ -20,6 +20,10 @@ export default defineConfig(({ command }) => ({
         target: `http://localhost:${BACKEND_DEV_SERVER_PORT}/`,
         changeOrigin: true,
       },
+      '/loopy': {
+        target: `http://localhost:${BACKEND_DEV_SERVER_PORT}/`,
+        changeOrigin: true,
+      },
     },
   },
 }))

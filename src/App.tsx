@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import Chat from './Chat.tsx'
 import { AppSidebar } from './components/app-sidebar.tsx'
+import { LoopySheet } from './components/loopy-sheet.tsx'
 import { ThemeProvider } from './components/theme-provider.tsx'
 import { SidebarProvider } from './components/ui/sidebar.tsx'
 import { Toaster } from './components/ui/sonner.tsx'
@@ -42,6 +43,7 @@ export default function App() {
                 'has-[.stick-to-bottom:empty]:overflow-visible has-[.stick-to-bottom:empty]:basis-[0px] transition-[flex-basis] duration-200',
               )}
             >
+              {ready && <LoopySheet />}
               {ready && <Chat />}
             </div>
           </div>

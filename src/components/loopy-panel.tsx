@@ -7,6 +7,7 @@ import { Separator } from '@/components/ui/separator'
 import { cn } from '@/lib/utils'
 import type {
   LoopyDecision,
+  LoopyInstructions,
   LoopyLearning,
   LoopyOrchestratorPersona,
   LoopyPersonas,
@@ -107,7 +108,7 @@ function PersonaCard({
   name: string
   subtitle?: ReactNode
   instructions: string
-  definedIn: string
+  definedIn?: string
 }) {
   const [open, setOpen] = useState(false)
   return (
@@ -121,7 +122,7 @@ function PersonaCard({
       </CollapsibleTrigger>
       <CollapsibleContent className="px-3 pb-3 pt-1">
         <p className="whitespace-pre-wrap text-sm text-muted-foreground">{instructions}</p>
-        <p className="mt-2 text-xs text-muted-foreground/70 font-mono break-all">{definedIn}</p>
+        {definedIn && <p className="mt-2 text-xs text-muted-foreground/70 font-mono break-all">{definedIn}</p>}
       </CollapsibleContent>
     </Collapsible>
   )
@@ -181,6 +182,90 @@ function PersonasView({ personas }: { personas: LoopyPersonas }) {
           <p className="text-sm text-muted-foreground">No orchestrator delegates.</p>
         )}
       </div>
+    </div>
+  )
+}
+
+function CapabilityCard({
+  name,
+  description,
+  instructions,
+  fallback,
+  definedIn,
+}: {
+  name: string
+  description: string | null
+  instructions: string | null
+  fallback: string
+  definedIn?: string
+}) {
+  return (
+    <PersonaCard
+      name={name}
+      subtitle={description ? <span className="text-xs text-muted-foreground">{description}</span> : undefined}
+      instructions={instructions ?? fallback}
+      definedIn={definedIn}
+    />
+  )
+}
+
+function InstructionsView({ instructions }: { instructions: LoopyInstructions }) {
+  const caps = instructions.orchestrator.capabilities
+  const active = caps.filter((c) => !c.deferred && (Boolean(c.instructions) || c.dynamic))
+  const skills = caps.filter((c) => c.deferred)
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-2">
+        <SectionTitle>Orchestrator system prompt</SectionTitle>
+        <PersonaCard name="Base instructions" instructions={instructions.orchestrator.base_instructions} />
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <SectionTitle>Active capabilities</SectionTitle>
+        {active.map((c) => (
+          <CapabilityCard
+            key={c.name}
+            name={c.name}
+            description={c.description}
+            instructions={c.instructions}
+            fallback={c.dynamic ? '(resolved per run)' : '(no static instructions)'}
+          />
+        ))}
+        {active.length === 0 && (
+          <p className="text-sm text-muted-foreground">No instruction-bearing capabilities loaded.</p>
+        )}
+      </div>
+
+      {skills.length > 0 && (
+        <div className="flex flex-col gap-2">
+          <SectionTitle>Skills (load on demand)</SectionTitle>
+          {skills.map((s) => (
+            <CapabilityCard
+              key={s.id ?? s.name}
+              name={s.id ?? s.name}
+              description={s.description}
+              instructions={s.instructions}
+              fallback="(body loads on activation)"
+            />
+          ))}
+        </div>
+      )}
+
+      {instructions.disk_subagents.length > 0 && (
+        <div className="flex flex-col gap-2">
+          <SectionTitle>Disk sub-agents</SectionTitle>
+          {instructions.disk_subagents.map((a) => (
+            <CapabilityCard
+              key={a.name}
+              name={a.name}
+              description={a.description}
+              instructions={a.instructions}
+              fallback="(no instructions)"
+              definedIn={a.source}
+            />
+          ))}
+        </div>
+      )}
     </div>
   )
 }
@@ -264,10 +349,12 @@ export function LoopyPanelContent({
   workflow,
   personas,
   workspace,
+  instructions,
 }: {
   workflow: LoopyWorkflow | null | undefined
   personas: LoopyPersonas | null | undefined
   workspace: LoopyWorkspace | null | undefined
+  instructions: LoopyInstructions | null | undefined
 }) {
   if (!workflow) {
     return (
@@ -285,6 +372,12 @@ export function LoopyPanelContent({
         <>
           <Separator />
           <WorkspaceView workspace={workspace} />
+        </>
+      )}
+      {instructions && (
+        <>
+          <Separator />
+          <InstructionsView instructions={instructions} />
         </>
       )}
       {personas && (

@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 
-import { getLoopyPersonas, getLoopyWorkflow, getLoopyWorkspace } from '@/lib/loopy-api'
+import { getLoopyInstructions, getLoopyPersonas, getLoopyWorkflow, getLoopyWorkspace } from '@/lib/loopy-api'
 
 const WORKFLOW_POLL_MS = 3000
 
@@ -25,6 +25,14 @@ export function useLoopyWorkspace() {
   return useQuery({
     queryKey: ['loopy', 'workspace'],
     queryFn: getLoopyWorkspace,
+    retry: false,
+  })
+}
+
+export function useLoopyInstructions() {
+  return useQuery({
+    queryKey: ['loopy', 'instructions'],
+    queryFn: getLoopyInstructions,
     retry: false,
   })
 }

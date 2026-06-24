@@ -6,13 +6,14 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
-import { useLoopyPersonas, useLoopyWorkflow, useLoopyWorkspace } from '@/hooks/useLoopy'
+import { useLoopyInstructions, useLoopyPersonas, useLoopyWorkflow, useLoopyWorkspace } from '@/hooks/useLoopy'
 
 export function LoopySheet() {
   const [open, setOpen] = useState(false)
   const workflowQuery = useLoopyWorkflow()
   const personasQuery = useLoopyPersonas()
   const workspaceQuery = useLoopyWorkspace()
+  const instructionsQuery = useLoopyInstructions()
 
   const workflow = workflowQuery.data
 
@@ -40,7 +41,12 @@ export function LoopySheet() {
           <SheetDescription>Live view of the active Loopy workflow.</SheetDescription>
         </SheetHeader>
         <ScrollArea className="flex-1 px-4 pb-6">
-          <LoopyPanelContent workflow={workflow} personas={personasQuery.data} workspace={workspaceQuery.data} />
+          <LoopyPanelContent
+            workflow={workflow}
+            personas={personasQuery.data}
+            workspace={workspaceQuery.data}
+            instructions={instructionsQuery.data}
+          />
         </ScrollArea>
       </SheetContent>
     </Sheet>

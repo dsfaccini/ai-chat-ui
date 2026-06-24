@@ -72,3 +72,49 @@ export function getLoopyPersonas(): Promise<LoopyPersonas | null> {
 export function getLoopyWorkspace(): Promise<LoopyWorkspace | null> {
   return getLoopyJson<LoopyWorkspace>('/loopy/workspace')
 }
+
+export interface LoopyCapabilityInstruction {
+  name: string
+  id: string | null
+  description: string | null
+  deferred: boolean
+  instructions: string | null
+  dynamic: boolean
+}
+
+export interface LoopyDelegatablePersona {
+  name: string
+  kind: 'base' | 'runtime'
+  instructions: string
+  write_access: boolean
+}
+
+export interface LoopyDiskSubagent {
+  name: string
+  description: string | null
+  instructions: string
+  source: string
+}
+
+export interface LoopyReviewPersonaInstruction {
+  name: string
+  wave: number
+  instructions: string
+}
+
+// Every instruction loaded onto any agent loopy can run: the orchestrator's system
+// prompt + each composed capability's contribution, the on-demand skills, the
+// disk-loaded delegates, the delegatable personas, and the review personas.
+export interface LoopyInstructions {
+  orchestrator: {
+    base_instructions: string
+    capabilities: LoopyCapabilityInstruction[]
+  }
+  delegatable_personas: LoopyDelegatablePersona[]
+  disk_subagents: LoopyDiskSubagent[]
+  review_personas: LoopyReviewPersonaInstruction[]
+}
+
+export function getLoopyInstructions(): Promise<LoopyInstructions | null> {
+  return getLoopyJson<LoopyInstructions>('/loopy/instructions')
+}

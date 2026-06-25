@@ -40,7 +40,7 @@ export function LoopySheet() {
           </SheetTitle>
           <SheetDescription>Live view of the active Loopy workflow.</SheetDescription>
         </SheetHeader>
-        <ScrollArea className="flex-1 px-4 pb-6">
+        <ScrollArea className="flex-1 min-h-0 px-4 pb-6">
           <LoopyPanelContent
             workflow={workflow}
             personas={personasQuery.data}

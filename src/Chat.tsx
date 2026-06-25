@@ -257,14 +257,28 @@ const Chat = () => {
     return configQuery.data?.builtinTools.filter((tool) => enabledToolIds.includes(tool.id)) ?? []
   }, [configQuery.data, model])
 
-  // The model is still working but nothing is visibly streaming: after a tool result it
-  // thinks/plans before the next text or tool call, and the SDK status stays 'streaming'
-  // with the last part being the finished tool (not growing text). Show the loader so the
-  // turn never looks stalled. While text/reasoning streams, that content is its own signal.
-  const lastMessage = messages.at(-1)
-  const lastPart = lastMessage?.role === 'assistant' ? lastMessage.parts.at(-1) : undefined
-  const workingSilently =
-    status === 'streaming' && (lastPart === undefined || (lastPart.type !== 'text' && lastPart.type !== 'reasoning'))
+  // The model can be working with nothing visibly streaming: after a tool result it
+  // thinks/plans before the next part, or a long tool body (e.g. the review wave) runs
+  // silently while the SDK status stays 'streaming'. Drive the loader off recent stream
+  // activity rather than the last part's type -- the latter is brittle (a stopped trailing
+  // text/reasoning part hid the loader mid-work). Actively streaming content updates
+  // `messages` and keeps the loader hidden; once the stream goes quiet for a beat the
+  // loader reappears, so the turn never looks stalled.
+  const lastActivityRef = useRef(Date.now())
+  useEffect(() => {
+    lastActivityRef.current = Date.now()
+  }, [messages])
+  const [, tickActivity] = useState(0)
+  useEffect(() => {
+    if (status !== 'streaming') return
+    const id = setInterval(() => {
+      tickActivity((t) => t + 1)
+    }, 400)
+    return () => {
+      clearInterval(id)
+    }
+  }, [status])
+  const workingSilently = status === 'streaming' && Date.now() - lastActivityRef.current > 600
 
   return (
     <>

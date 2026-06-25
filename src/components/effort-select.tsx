@@ -9,16 +9,14 @@ import {
 interface EffortOption {
   value: string
   label: string
-  selectValue: string
 }
 
 const EFFORT_OPTIONS: EffortOption[] = [
-  { value: '', label: 'Effort: Default', selectValue: 'default' },
-  { value: 'minimal', label: 'Effort: Minimal', selectValue: 'minimal' },
-  { value: 'low', label: 'Effort: Low', selectValue: 'low' },
-  { value: 'medium', label: 'Effort: Medium', selectValue: 'medium' },
-  { value: 'high', label: 'Effort: High', selectValue: 'high' },
-  { value: 'xhigh', label: 'Effort: X-High', selectValue: 'xhigh' },
+  { value: 'minimal', label: 'Effort: Minimal' },
+  { value: 'low', label: 'Effort: Low' },
+  { value: 'medium', label: 'Effort: Medium' },
+  { value: 'high', label: 'Effort: High' },
+  { value: 'xhigh', label: 'Effort: X-High' },
 ]
 
 interface EffortSelectProps {
@@ -27,21 +25,14 @@ interface EffortSelectProps {
 }
 
 export const EffortSelect = ({ value, onValueChange }: EffortSelectProps) => {
-  const selectValue = value === '' ? 'default' : value
-
   return (
-    <PromptInputModelSelect
-      value={selectValue}
-      onValueChange={(v) => {
-        onValueChange(v === 'default' ? '' : v)
-      }}
-    >
+    <PromptInputModelSelect value={value} onValueChange={onValueChange}>
       <PromptInputModelSelectTrigger>
         <PromptInputModelSelectValue />
       </PromptInputModelSelectTrigger>
       <PromptInputModelSelectContent>
         {EFFORT_OPTIONS.map((opt) => (
-          <PromptInputModelSelectItem key={opt.selectValue} value={opt.selectValue}>
+          <PromptInputModelSelectItem key={opt.value} value={opt.value}>
             {opt.label}
           </PromptInputModelSelectItem>
         ))}

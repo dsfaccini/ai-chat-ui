@@ -249,6 +249,15 @@ const Chat = () => {
     return configQuery.data?.builtinTools.filter((tool) => enabledToolIds.includes(tool.id)) ?? []
   }, [configQuery.data, model])
 
+  // The model is still working but nothing is visibly streaming: after a tool result it
+  // thinks/plans before the next text or tool call, and the SDK status stays 'streaming'
+  // with the last part being the finished tool (not growing text). Show the loader so the
+  // turn never looks stalled. While text/reasoning streams, that content is its own signal.
+  const lastMessage = messages.at(-1)
+  const lastPart = lastMessage?.role === 'assistant' ? lastMessage.parts.at(-1) : undefined
+  const workingSilently =
+    status === 'streaming' && (lastPart === undefined || (lastPart.type !== 'text' && lastPart.type !== 'reasoning'))
+
   return (
     <>
       <Conversation className="h-full">
@@ -290,7 +299,7 @@ const Chat = () => {
               ))}
             </div>
           ))}
-          {status === 'submitted' && <Loader />}
+          {(status === 'submitted' || workingSilently) && <Loader />}
           {status === 'error' && error && (
             <div className="px-4 py-3 mx-4 my-2 bg-destructive/10 border border-destructive/20 rounded-md text-destructive text-sm">
               <strong>Error:</strong> {error.message}

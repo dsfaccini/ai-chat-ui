@@ -118,3 +118,17 @@ export interface LoopyInstructions {
 export function getLoopyInstructions(): Promise<LoopyInstructions | null> {
   return getLoopyJson<LoopyInstructions>('/loopy/instructions')
 }
+
+// One ephemeral status line emitted by a cheap LLM while the orchestrator works.
+// `seq` increments whenever `line` changes, so the UI can key its fade transition
+// on it. Not persisted in the chat thread.
+export interface LoopyNarration {
+  seq: number
+  line: string
+  lines: string[]
+  active: boolean
+}
+
+export function getLoopyNarration(): Promise<LoopyNarration | null> {
+  return getLoopyJson<LoopyNarration>('/loopy/narration')
+}

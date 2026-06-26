@@ -31,6 +31,8 @@ import { useQuery } from '@tanstack/react-query'
 import { useThrottle } from '@uidotdev/usehooks'
 import { nanoid } from 'nanoid'
 import { useConversationIdFromUrl } from './hooks/useConversationIdFromUrl'
+import { useLoopyNarration } from './hooks/useLoopy'
+import { NarrationTicker } from './components/narration-ticker'
 import { Part } from './Part'
 import type { ConversationEntry } from './types'
 import { getToolIcon } from '@/lib/tool-icons'
@@ -340,6 +342,9 @@ const Chat = () => {
     }
   }, [status])
   const workingSilently = status === 'streaming' && Date.now() - lastActivityRef.current > 600
+  const working = status === 'submitted' || workingSilently
+  const narrationQuery = useLoopyNarration(working)
+  const narration = narrationQuery.data
 
   return (
     <>
@@ -382,7 +387,12 @@ const Chat = () => {
               ))}
             </div>
           ))}
-          {(status === 'submitted' || workingSilently) && <Loader />}
+          {working && (
+            <div className="flex flex-col gap-1.5">
+              <Loader />
+              {narration && <NarrationTicker line={narration.line} seq={narration.seq} />}
+            </div>
+          )}
           {status === 'error' && error && (
             <div className="px-4 py-3 mx-4 my-2 bg-destructive/10 border border-destructive/20 rounded-md text-destructive text-sm">
               <div>

@@ -586,11 +586,12 @@ const Chat = () => (
 
 export default Chat
 
-// Walk a message's parts and render them. A single `groupParts` pass collapses
-// runs of consecutive filtered tool parts into a `HiddenToolsGroup` and runs of
-// consecutive same-tool calls into a `ToolCallGroup`. `renderPart` is the
-// per-part renderer (returns a `<Part>`); grouping is message-level so it lives
-// here rather than in `Part`. Non-grouped parts render unchanged.
+// Walk a message's parts and render them, collapsing two kinds of consecutive
+// runs into a single element: filtered tool parts into a `HiddenToolsGroup`, and
+// runs of >=2 calls to the same (non-filtered) tool into a `ToolCallGroup`.
+// `renderPart` is the per-part renderer (returns a `<Part>` element); grouping
+// is message-level so it lives here rather than in `Part`. Lone calls and
+// non-tool parts render unchanged.
 function renderMessageParts(
   message: UIMessage,
   renderPart: (part: UIMessagePart<UIDataTypes, UITools>, index: number) => ReactNode,
@@ -627,6 +628,8 @@ function renderMessageParts(
   })
 }
 
+// A tool part's lifecycle state (e.g. `output-available`). Non-tool parts have
+// no state; the grouping pass never asks for theirs.
 function partState(part: UIMessagePart<UIDataTypes, UITools>): string {
   return 'state' in part && typeof part.state === 'string' ? part.state : ''
 }

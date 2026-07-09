@@ -40,6 +40,18 @@ def send_email(to: str, body: str) -> str:
     return f"Email sent to {to}"
 
 
+@agent.tool_plain
+def run_code(code: str, restart: bool = False) -> dict[str, object]:
+    """Run a snippet of Python code."""
+    return {"output": "hello world\n", "result": 42}
+
+
+@agent.tool_plain
+def large_output() -> dict[str, object]:
+    """Return a tool output large enough to exceed the lazy-render threshold."""
+    return {"summary": "large_result_marker", "payload": "x" * 22000}
+
+
 def _has_tool_return(messages: list[ModelMessage]) -> bool:
     return any(isinstance(p, ToolReturnPart) for msg in messages for p in msg.parts)
 
@@ -82,6 +94,19 @@ async def stream_multi_tool(
     }
 
 
+async def stream_repeated_tool(
+    messages: list[ModelMessage], info: AgentInfo
+) -> AsyncIterator[str | dict[int, DeltaToolCall]]:
+    if _has_tool_return(messages):
+        yield "All weather lookups completed."
+        return
+    yield {
+        0: DeltaToolCall(name="get_weather", json_args=json.dumps({"city": "London"})),
+        1: DeltaToolCall(name="get_weather", json_args=json.dumps({"city": "Paris"})),
+        2: DeltaToolCall(name="get_weather", json_args=json.dumps({"city": "Tokyo"})),
+    }
+
+
 async def stream_error(
     messages: list[ModelMessage], info: AgentInfo
 ) -> AsyncIterator[str | dict[int, DeltaToolCall]]:
@@ -92,6 +117,29 @@ async def stream_error(
         yield "The tool encountered an error."
         return
     yield {0: DeltaToolCall(name="get_weather", json_args=json.dumps({"city": ""}))}
+
+
+async def stream_run_code(
+    messages: list[ModelMessage], info: AgentInfo
+) -> AsyncIterator[str | dict[int, DeltaToolCall]]:
+    if _has_tool_return(messages):
+        yield "The code ran successfully."
+        return
+    yield {
+        0: DeltaToolCall(
+            name="run_code",
+            json_args=json.dumps({"code": "print('hello world')", "restart": False}),
+        )
+    }
+
+
+async def stream_large_output(
+    messages: list[ModelMessage], info: AgentInfo
+) -> AsyncIterator[str | dict[int, DeltaToolCall]]:
+    if _has_tool_return(messages):
+        yield "The large output is ready."
+        return
+    yield {0: DeltaToolCall(name="large_output", json_args="{}")}
 
 
 def _has_tool_return_for(messages: list[ModelMessage], tool_name: str) -> bool:
@@ -128,12 +176,34 @@ async def stream_approval(
     }
 
 
+async def stream_repeated_approval(
+    messages: list[ModelMessage], info: AgentInfo
+) -> AsyncIterator[str | dict[int, DeltaToolCall]]:
+    if _has_tool_return_for(messages, "send_email"):
+        yield "Both emails have been sent successfully."
+        return
+    yield {
+        0: DeltaToolCall(
+            name="send_email",
+            json_args=json.dumps({"to": "alice@example.com", "body": "Hello Alice!"}),
+        ),
+        1: DeltaToolCall(
+            name="send_email",
+            json_args=json.dumps({"to": "bob@example.com", "body": "Hello Bob!"}),
+        ),
+    }
+
+
 models: dict[str, object] = {
     "text": FunctionModel(stream_function=stream_text),
     "tool": FunctionModel(stream_function=stream_tool),
     "multi-tool": FunctionModel(stream_function=stream_multi_tool),
+    "repeated-tool": FunctionModel(stream_function=stream_repeated_tool),
     "error": FunctionModel(stream_function=stream_error),
     "approval": FunctionModel(stream_function=stream_approval),
+    "repeated-approval": FunctionModel(stream_function=stream_repeated_approval),
+    "run-code": FunctionModel(stream_function=stream_run_code),
+    "large-output": FunctionModel(stream_function=stream_large_output),
     "anthropic": "anthropic:claude-haiku-4-5",
     "openai": "openai-responses:gpt-4.1-nano",
     "google": "google:gemini-2.0-flash",
